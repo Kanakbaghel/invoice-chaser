@@ -1,0 +1,4 @@
+strands-agents
+pandas
+openpyxl
+python-dateutil
