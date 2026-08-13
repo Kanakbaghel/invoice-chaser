@@ -12,12 +12,20 @@ Run this AFTER:
 """
 
 from strands import Agent, tool
+from strands.models import BedrockModel
 from pathlib import Path
 from data_loader import load_invoices, get_open_invoices, reminder_tier, cash_flow_projection
 from reminder_writer import draft_reminder
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = str(PROJECT_ROOT / "data" / "accounts_receivable.csv")
+
+# Claude Haiku 4.5 — fast and cost-efficient, well suited for an agent
+# that mostly needs to call tools and summarize their results.
+bedrock_model = BedrockModel(
+    model_id="us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    region_name="us-east-1",
+)
 SNAPSHOT_DATE = "2013-03-01"  # simulated "today" — change to explore other points in time
 
 
@@ -81,6 +89,7 @@ def draft_reminder_for_invoice(invoice_number: str) -> str:
 
 # The agent itself — wire the tools together with a system prompt.
 invoice_agent = Agent(
+    model=bedrock_model,
     tools=[check_overdue_invoices, get_cash_flow_summary, draft_reminder_for_invoice],
     system_prompt=(
         "You are Invoice Chaser, an assistant that helps freelancers and small "
