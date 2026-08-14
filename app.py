@@ -20,6 +20,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from data_loader import load_invoices, get_open_invoices, reminder_tier, cash_flow_projection, DEFAULT_DATA_PATH
 from reminder_writer import draft_reminder
+from client_risk import compute_client_risk, client_risk_summary
+from payment_plan import draft_payment_plan_offer
 
 
 st.set_page_config(page_title="Invoice Chaser", page_icon="🧾", layout="wide")
@@ -216,3 +218,44 @@ message = draft_reminder(
 )
 
 st.text_area("Reminder draft — copy and send as-is, or edit first", message, height=220)
+
+# ---------- Client risk (sample dataset only — needs settlement history) ----------
+if mode == "sample":
+    st.markdown("---")
+    st.subheader("📊 Client payment risk")
+    st.caption("Based on this client's past settled invoices — how reliably do they pay?")
+
+    risk_df = compute_client_risk(df, str(snapshot))
+    client_match = risk_df[risk_df["customerID"] == row[customer_col]]
+
+    if client_match.empty:
+        st.info(f"No payment history found yet for **{row[customer_col]}** — not enough data to score them.")
+    else:
+        r = client_match.iloc[0]
+        badge = {"Low": "🟢", "Medium": "🟡", "High": "🔴"}[r["risk_level"]]
+        st.markdown(f"**{badge} {r['risk_level']} risk** — {client_risk_summary(r)}")
+
+    with st.expander("See risk profile for all clients"):
+        st.dataframe(
+            risk_df.rename(columns={
+                "customerID": "Client", "num_invoices": "Past Invoices",
+                "avg_days_late": "Avg Days Late", "pct_disputed": "% Disputed", "risk_level": "Risk",
+            }),
+            use_container_width=True, hide_index=True,
+        )
+
+# ---------- Payment plan suggestion for severely overdue invoices ----------
+if tier in ("firm", "urgent"):
+    st.markdown("---")
+    st.subheader("💳 Consider a payment plan instead")
+    st.caption("This invoice is significantly overdue — a blunt demand may not land well. Here's a softer alternative.")
+
+    num_installments = st.slider("Number of installments", min_value=2, max_value=4, value=3)
+    plan_message = draft_payment_plan_offer(
+        customer=row[customer_col],
+        invoice_number=str(row[id_col]),
+        amount=row[amount_col],
+        days_overdue=int(row[days_col]),
+        num_installments=num_installments,
+    )
+    st.text_area("Payment plan offer", plan_message, height=260)
