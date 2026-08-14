@@ -2,3 +2,6 @@ strands-agents
 pandas
 openpyxl
 python-dateutil
+strands-agents
+openpyxl
+streamlit

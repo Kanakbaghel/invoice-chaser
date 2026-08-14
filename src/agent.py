@@ -20,10 +20,11 @@ from reminder_writer import draft_reminder
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = str(PROJECT_ROOT / "data" / "accounts_receivable.csv")
 
-# Claude Haiku 4.5 — fast and cost-efficient, well suited for an agent
-# that mostly needs to call tools and summarize their results.
+# Amazon Nova Micro — fast, cheap, and doesn't require the extra
+# Anthropic use-case approval step that new AWS accounts sometimes
+# have to wait on. Swap back to a Claude model_id later if you want.
 bedrock_model = BedrockModel(
-    model_id="us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    model_id="us.amazon.nova-micro-v1:0",
     region_name="us-east-1",
 )
 SNAPSHOT_DATE = "2013-03-01"  # simulated "today" — change to explore other points in time
