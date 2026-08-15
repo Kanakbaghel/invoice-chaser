@@ -1,0 +1,377 @@
+/* ============================================================
+   Invoice Chaser — design tokens
+   Concept: a ledger book at night. Ink-navy page, warm paper
+   cards for each invoice "slip", and a rubber-stamp motif used
+   functionally as the urgency badge (Gentle/Firm/Urgent...).
+   ============================================================ */
+
+:root {
+  --ink: #10162B;
+  --ink-soft: #1B2340;
+  --paper: #F6F1E4;
+  --paper-line: #E4DCC8;
+  --stamp: #B3382C;
+  --stamp-soft: #E7CFC9;
+  --teal: #2F6F68;
+  --teal-soft: #CFE3DF;
+  --gold: #C89A3E;
+  --text-on-ink: #E9E6DA;
+  --text-on-ink-muted: #9AA0BC;
+  --text-on-paper: #241F14;
+  --text-on-paper-muted: #7A7259;
+
+  --display: 'Space Grotesk', sans-serif;
+  --body: 'Inter', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+
+  --radius: 10px;
+  --shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text-on-ink);
+  font-family: var(--body);
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+
+/* ---------------- Header ---------------- */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+  color: var(--text-on-ink);
+}
+
+.wordmark .mark {
+  width: 30px; height: 30px;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transform: rotate(-6deg);
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.site-nav {
+  display: flex;
+  gap: 24px;
+  font-size: 0.92rem;
+  color: var(--text-on-ink-muted);
+}
+
+.site-nav a { text-decoration: none; }
+.site-nav a:hover { color: var(--gold); }
+
+/* ---------------- Hero ---------------- */
+
+.hero {
+  padding: 72px 32px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero h1 {
+  font-family: var(--display);
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  line-height: 1.08;
+  margin: 0 0 20px;
+  letter-spacing: -0.01em;
+}
+
+.hero p {
+  color: var(--text-on-ink-muted);
+  font-size: 1.08rem;
+  max-width: 46ch;
+  margin: 0 0 28px;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 14px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--gold);
+  color: #1a1406;
+  font-family: var(--display);
+  font-weight: 700;
+  padding: 13px 22px;
+  border-radius: 999px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.98rem;
+}
+
+.cta:hover { filter: brightness(1.08); }
+
+/* Stamp graphic in hero */
+.stamp-art {
+  position: relative;
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow);
+  transform: rotate(1.5deg);
+  color: var(--text-on-paper);
+}
+
+.stamp-art .slip-line { height: 8px; background: var(--paper-line); border-radius: 4px; margin-bottom: 10px; }
+.stamp-art .slip-line.short { width: 55%; }
+
+.stamp {
+  position: absolute;
+  top: 18px; right: 18px;
+  border: 3px solid var(--stamp);
+  color: var(--stamp);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transform: rotate(-9deg);
+  opacity: 0.9;
+  background: rgba(179,56,44,0.06);
+}
+
+/* ---------------- Ledger section ---------------- */
+
+.ledger {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 32px 96px;
+}
+
+.ledger-card {
+  background: var(--paper);
+  color: var(--text-on-paper);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+
+.ledger-card h2 {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  margin: 0 0 4px;
+}
+
+.ledger-card .caption {
+  color: var(--text-on-paper-muted);
+  font-size: 0.9rem;
+  margin: 0 0 18px;
+}
+
+/* Source toggle */
+.source-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.toggle-btn {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--paper-line);
+  background: transparent;
+  color: var(--text-on-paper-muted);
+  cursor: pointer;
+}
+
+.toggle-btn.active {
+  background: var(--ink);
+  color: var(--text-on-ink);
+  border-color: var(--ink);
+}
+
+.field-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 6px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 0.8rem; color: var(--text-on-paper-muted); font-weight: 600; }
+.field select, .field input[type="date"], .field input[type="text"], .field input[type="number"] {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  padding: 8px 10px;
+  border: 1.5px solid var(--paper-line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-on-paper);
+}
+
+.file-drop {
+  border: 2px dashed var(--paper-line);
+  border-radius: 8px;
+  padding: 22px;
+  text-align: center;
+  color: var(--text-on-paper-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.file-drop:hover { border-color: var(--gold); }
+
+/* Stats strip */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.stat {
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.stat .label { font-size: 0.76rem; color: var(--text-on-paper-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat .value { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+
+/* Filters */
+.filters { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; margin: 20px 0 16px; }
+.tier-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--paper-line);
+  cursor: pointer;
+  color: var(--text-on-paper-muted);
+  background: #fff;
+}
+.chip.active.gentle { background: var(--teal-soft); border-color: var(--teal); color: var(--teal); }
+.chip.active.polite_followup { background: #FDEBD3; border-color: var(--gold); color: #8a660f; }
+.chip.active.firm, .chip.active.urgent { background: var(--stamp-soft); border-color: var(--stamp); color: var(--stamp); }
+
+/* Table */
+table.ledger-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+table.ledger-table th {
+  text-align: left;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-on-paper-muted);
+  border-bottom: 1.5px solid var(--paper-line);
+  padding: 8px 10px;
+}
+table.ledger-table td { padding: 10px; border-bottom: 1px dashed var(--paper-line); font-family: var(--mono); }
+table.ledger-table tr:hover { background: rgba(0,0,0,0.02); cursor: pointer; }
+table.ledger-table tr.selected { background: rgba(200,154,62,0.12); }
+
+.tier-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 4px 9px;
+  border-radius: 5px;
+  border: 2px solid currentColor;
+  transform: rotate(-3deg);
+  text-transform: uppercase;
+}
+.tier-badge.gentle { color: var(--teal); }
+.tier-badge.polite_followup { color: #8a660f; }
+.tier-badge.firm, .tier-badge.urgent { color: var(--stamp); }
+
+/* two column layout for table + chart */
+.split { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 860px) { .split, .stats-strip { grid-template-columns: 1fr; } .hero { grid-template-columns: 1fr; } }
+
+/* Risk badge */
+.risk-badge { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 0.9rem; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--paper-line); }
+.risk-dot { width: 10px; height: 10px; border-radius: 50%; }
+.risk-dot.Low { background: var(--teal); }
+.risk-dot.Medium { background: var(--gold); }
+.risk-dot.High { background: var(--stamp); }
+
+/* Reminder / plan output — torn slip look */
+.slip-output {
+  background: #fff;
+  border: 1px solid var(--paper-line);
+  border-radius: 6px;
+  padding: 18px;
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  white-space: pre-wrap;
+  position: relative;
+}
+.slip-output::before {
+  content: "";
+  position: absolute;
+  top: -1px; left: 0; right: 0; height: 6px;
+  background-image: radial-gradient(circle, var(--ink) 2.5px, transparent 2.6px);
+  background-size: 14px 14px;
+  background-position: 0 -7px;
+}
+
+.action-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); font-size: 0.9rem; }
+.action-row .priority { font-family: var(--mono); font-weight: 700; color: var(--stamp); width: 32px; }
+
+.btn-secondary {
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--text-on-paper);
+  cursor: pointer;
+}
+.btn-secondary:hover { background: var(--ink); color: var(--text-on-ink); }
+
+.slider-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-on-paper-muted); }
+input[type="range"] { accent-color: var(--stamp); }
+
+canvas { max-width: 100%; }
+
+.empty-state { color: var(--text-on-paper-muted); font-size: 0.92rem; padding: 20px 0; text-align: center; }
+
+/* ---------------- Footer ---------------- */
+
+.site-footer {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-on-ink-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.site-footer a { color: var(--gold); text-decoration: none; }
