@@ -22,6 +22,8 @@ from data_loader import load_invoices, get_open_invoices, reminder_tier, cash_fl
 from reminder_writer import draft_reminder
 from client_risk import compute_client_risk, client_risk_summary
 from payment_plan import draft_payment_plan_offer
+from forecast import project_cash_flow, projected_cash_by
+from weekly_brief import build_action_plan
 
 
 st.set_page_config(page_title="Invoice Chaser", page_icon="🧾", layout="wide")
@@ -118,6 +120,9 @@ if mode == "sample":
         "invoiceNumber", "InvoiceAmount", "DueDate", "DaysOverdue", "customerID"
     )
     working = overdue
+    as_of_ts = pd.Timestamp(str(snapshot))
+    risk_df = compute_client_risk(df, str(snapshot))
+    has_risk_data = True
 
 # ---------- Upload flow: column mapping ----------
 else:
@@ -179,9 +184,39 @@ else:
         "invoiceNumber", "InvoiceAmount", "DueDate", "DaysOverdue", "customerID"
     )
     working = overdue
+    as_of_ts = today
+    risk_df = None
+    has_risk_data = False
 
 
-# ---------- Shared: table + chart + reminder drafting ----------
+# ---------- Shared: filters ----------
+st.subheader("🔍 Filter")
+f1, f2, f3 = st.columns([2, 2, 2])
+with f1:
+    search = st.text_input("Search by client name", "")
+with f2:
+    tier_filter = st.multiselect(
+        "Urgency", options=["gentle", "polite_followup", "firm", "urgent"],
+        default=["gentle", "polite_followup", "firm", "urgent"],
+    )
+with f3:
+    max_amt = float(working["InvoiceAmount"].max())
+    amount_range = st.slider("Amount range (₹)", 0.0, max_amt, (0.0, max_amt))
+
+if search:
+    working = working[working[customer_col].astype(str).str.contains(search, case=False, na=False)]
+working = working[working["Tier"].isin(tier_filter)]
+working = working[
+    (working[amount_col] >= amount_range[0]) & (working[amount_col] <= amount_range[1])
+]
+
+if working.empty:
+    st.warning("No invoices match these filters.")
+    st.stop()
+
+st.markdown("---")
+
+# ---------- Table + chart ----------
 tier_order = ["gentle", "polite_followup", "firm", "urgent"]
 tier_totals = working.groupby("Tier")["InvoiceAmount"].sum()
 tier_totals = tier_totals.reindex([t for t in tier_order if t in tier_totals.index])
@@ -199,6 +234,53 @@ with left:
 with right:
     st.subheader("By urgency")
     st.bar_chart(tier_totals)
+
+st.markdown("---")
+
+# ---------- This week's action plan ----------
+st.subheader("📅 This week's action plan")
+st.caption("Not every overdue invoice deserves the same urgency — this ranks them by money at stake, how overdue they are, and (when known) the client's payment history.")
+
+action_plan = build_action_plan(working, risk_df)
+plan_display = action_plan.rename(columns={
+    customer_col: "Client", id_col: "Invoice #", amount_col: "Amount", days_col: "Days Overdue",
+})[["Client", "Invoice #", "Amount", "Days Overdue", "Tier", "PriorityScore", "RecommendedAction"]]
+st.dataframe(plan_display, use_container_width=True, hide_index=True)
+
+st.markdown("---")
+
+# ---------- Cash flow forecast ----------
+st.subheader("📈 Cash flow forecast")
+st.caption("Best case: everyone pays on their due date. Worst case: each client pays based on their own track record (or a default buffer if unknown).")
+
+cumulative = project_cash_flow(working, as_of_ts, risk_df)
+
+if cumulative.empty:
+    st.info("Not enough data to build a forecast yet.")
+else:
+    horizon = st.slider("Forecast horizon (days)", 7, 120, 60)
+    window_end = as_of_ts + pd.Timedelta(days=horizon)
+    chart_data = cumulative[cumulative.index <= window_end]
+    st.line_chart(chart_data)
+
+    fc1, fc2 = st.columns(2)
+    with fc1:
+        target_date = st.date_input("Check cash available by", value=(as_of_ts + pd.Timedelta(days=30)).date())
+    with fc2:
+        target_amount = st.number_input("Amount you need (₹)", min_value=0.0, value=0.0, step=100.0)
+
+    projected = projected_cash_by(cumulative, pd.Timestamp(target_date))
+    pc1, pc2 = st.columns(2)
+    pc1.metric("Best case by then", f"₹{projected['Best case']:.2f}")
+    pc2.metric("Worst case by then", f"₹{projected['Worst case']:.2f}")
+
+    if target_amount > 0:
+        if projected["Worst case"] >= target_amount:
+            st.success("Even in the worst case, you're projected to have this covered.")
+        elif projected["Best case"] >= target_amount:
+            st.warning("You'll likely be covered if clients pay roughly on time — but it's not guaranteed.")
+        else:
+            st.error("Based on current invoices, you may fall short of this amount by then.")
 
 st.markdown("---")
 st.subheader("Draft a reminder")
@@ -219,13 +301,12 @@ message = draft_reminder(
 
 st.text_area("Reminder draft — copy and send as-is, or edit first", message, height=220)
 
-# ---------- Client risk (sample dataset only — needs settlement history) ----------
-if mode == "sample":
+# ---------- Client risk (only when we have settlement history) ----------
+if has_risk_data:
     st.markdown("---")
     st.subheader("📊 Client payment risk")
     st.caption("Based on this client's past settled invoices — how reliably do they pay?")
 
-    risk_df = compute_client_risk(df, str(snapshot))
     client_match = risk_df[risk_df["customerID"] == row[customer_col]]
 
     if client_match.empty:
