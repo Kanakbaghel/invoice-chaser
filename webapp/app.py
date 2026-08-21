@@ -12,6 +12,7 @@ Deploy free on Render.com (or Railway) pointing at this file.
 import sys
 import os
 import uuid
+import tempfile
 from datetime import date
 
 import pandas as pd
@@ -34,6 +35,9 @@ app = Flask(
     static_url_path="/static",
     template_folder=os.path.join(BASE_DIR, "templates"),
 )
+
+# Limit upload size to 16 MB
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 # In-memory store for uploaded files between the "columns" and "compute"
 # steps. Fine for a demo; a production app would use real session storage.
@@ -62,15 +66,31 @@ def api_upload_columns():
         return jsonify({"error": "No file uploaded"}), 400
 
     f = request.files["file"]
-    ext = ".xlsx" if f.filename.lower().endswith((".xlsx", ".xls")) else ".csv"
+    filename = f.filename or ""
+    lower_fn = filename.lower()
+    ALLOWED_EXT = (".csv", ".xlsx", ".xls")
+    if not any(lower_fn.endswith(e) for e in ALLOWED_EXT):
+        return jsonify({"error": "Unsupported file type — upload .csv or .xlsx/.xls"}), 400
+
+    ext = ".xlsx" if lower_fn.endswith((".xlsx", ".xls")) else ".csv"
     token = str(uuid.uuid4())
-    tmp_path = f"/tmp/invoice_chaser_{token}{ext}"
+
+    # use system temp dir for cross-platform compatibility
+    tmp_dir = tempfile.gettempdir()
+    tmp_path = os.path.join(tmp_dir, f"invoice_chaser_{token}{ext}")
     f.save(tmp_path)
     UPLOAD_CACHE[token] = tmp_path
 
     try:
         raw_df = pd.read_excel(tmp_path) if ext != ".csv" else pd.read_csv(tmp_path)
     except Exception as e:
+        # cleanup on failure
+        UPLOAD_CACHE.pop(token, None)
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
         return jsonify({"error": f"Couldn't read that file: {e}"}), 400
 
     return jsonify({
@@ -88,29 +108,40 @@ def api_upload_compute():
     if not tmp_path or not os.path.exists(tmp_path):
         return jsonify({"error": "Upload session expired — please re-upload your file."}), 400
 
-    raw_df = pd.read_excel(tmp_path) if tmp_path.endswith(".xlsx") else pd.read_csv(tmp_path)
+    try:
+        raw_df = pd.read_excel(tmp_path) if tmp_path.endswith(".xlsx") else pd.read_csv(tmp_path)
 
-    work = pd.DataFrame({
-        "customerID": raw_df[data["customer_col"]],
-        "invoiceNumber": raw_df[data["id_col"]].astype(str),
-        "InvoiceAmount": pd.to_numeric(raw_df[data["amount_col"]], errors="coerce"),
-        "DueDate": pd.to_datetime(raw_df[data["due_col"]], errors="coerce"),
-    })
+        work = pd.DataFrame({
+            "customerID": raw_df[data["customer_col"]],
+            "invoiceNumber": raw_df[data["id_col"]].astype(str),
+            "InvoiceAmount": pd.to_numeric(raw_df[data["amount_col"]], errors="coerce"),
+            "DueDate": pd.to_datetime(raw_df[data["due_col"]], errors="coerce"),
+        })
 
-    paid_col = data.get("paid_col")
-    if paid_col:
-        paid_series = raw_df[paid_col].astype(str).str.strip().str.lower()
-        is_paid = paid_series.isin(["yes", "true", "1", "paid", "y"])
-        work = work[~is_paid]
+        paid_col = data.get("paid_col")
+        if paid_col:
+            paid_series = raw_df[paid_col].astype(str).str.strip().str.lower()
+            is_paid = paid_series.isin(["yes", "true", "1", "paid", "y"])
+            work = work[~is_paid]
 
-    work = work.dropna(subset=["DueDate", "InvoiceAmount"])
+        work = work.dropna(subset=["DueDate", "InvoiceAmount"])
 
-    today = pd.Timestamp(date.today())
-    work["DaysOverdue"] = (today - work["DueDate"]).dt.days
-    work["IsOverdue"] = work["DaysOverdue"] > 0
+        today = pd.Timestamp(date.today())
+        work["DaysOverdue"] = (today - work["DueDate"]).dt.days
+        work["IsOverdue"] = work["DaysOverdue"] > 0
 
-    bundle = bundle_from_open_df(work, today, None)
-    return jsonify(bundle)
+        bundle = bundle_from_open_df(work, today, None)
+        return jsonify(bundle)
+    except Exception as e:
+        return jsonify({"error": f"Couldn't process uploaded file: {e}"}), 400
+    finally:
+        # always clean up temporary file and cache entry
+        cached = UPLOAD_CACHE.pop(token, None)
+        if cached and os.path.exists(cached):
+            try:
+                os.remove(cached)
+            except Exception:
+                pass
 
 
 @app.route("/api/languages")
