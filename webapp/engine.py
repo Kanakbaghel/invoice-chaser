@@ -17,6 +17,8 @@ from data_loader import reminder_tier, cash_flow_projection
 from client_risk import client_risk_summary
 from forecast import project_cash_flow
 from weekly_brief import build_action_plan
+from decision_explainer import explain_tier, explain_risk, explain_priority
+from impact_calculator import estimate_impact, impact_summary_text
 
 
 def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: pd.DataFrame = None) -> dict:
@@ -38,6 +40,8 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
             "due_date": row["DueDate"].strftime("%d %b %Y"),
             "days_overdue": int(row["DaysOverdue"]),
             "tier": row["Tier"],
+            "disputed": bool(row.get("Disputed") == "Yes"),
+            "why": explain_tier(int(row["DaysOverdue"]), row["Tier"]),
         }
         for _, row in overdue.iterrows()
     ]
@@ -51,9 +55,11 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
                 "num_invoices": int(r["num_invoices"]),
                 "pct_disputed": float(r["pct_disputed"]),
                 "summary": client_risk_summary(r),
+                "why": explain_risk(float(r["avg_days_late"]), r["risk_level"], int(r["num_invoices"])),
             }
 
     action_plan_df = build_action_plan(overdue, risk_df) if not overdue.empty else overdue
+    max_amount = float(overdue["InvoiceAmount"].max()) if not overdue.empty else 0.0
     action_plan_records = [
         {
             "customer": row["customerID"],
@@ -63,9 +69,16 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
             "tier": row["Tier"],
             "priority_score": float(row["PriorityScore"]),
             "recommended_action": row["RecommendedAction"],
+            "why": explain_priority(
+                i + 1, float(row["InvoiceAmount"]), max_amount, row["Tier"],
+                risk_map.get(row["customerID"], {}).get("risk_level"),
+            ),
         }
-        for _, row in action_plan_df.iterrows()
+        for i, (_, row) in enumerate(action_plan_df.iterrows())
     ] if not action_plan_df.empty else []
+
+    impact = estimate_impact(overdue)
+    impact["summary_text"] = impact_summary_text(impact)
 
     cum = project_cash_flow(open_df, as_of_ts, risk_df)
     forecast = {
@@ -85,5 +98,6 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
         "risk": risk_map,
         "action_plan": action_plan_records,
         "forecast": forecast,
+        "impact": impact,
         "as_of": as_of_ts.strftime("%Y-%m-%d"),
     }
