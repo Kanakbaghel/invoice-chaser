@@ -1,170 +1,1263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice Chaser — get paid without the awkward emails</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description"
+        content="Invoice Chaser — AI-powered invoice follow-up, risk assessment, payment plans and cash-flow forecasting.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#070d17">
+
+  <title>Invoice Chaser — Get paid without the awkward emails</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- Prevents a flash of the wrong theme on load -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("ic-theme");
+        var theme = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
 </head>
+
 <body>
 
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
 <header class="site-header">
-  <a href="#" class="wordmark"><span class="mark">IC</span> Invoice Chaser</a>
+
+  <a href="#" class="wordmark">
+    <span class="mark">IC</span>
+    <span>Invoice Chaser</span>
+  </a>
+
   <nav class="site-nav">
-    <a href="#ledger">Open the ledger</a>
+    <a href="#ledger">Dashboard</a>
     <a href="#how">How it works</a>
-    <a href="https://github.com/Kanakbaghel/invoice-chaser" target="_blank">GitHub ↗</a>
+
+    <button
+      id="theme-toggle"
+      class="theme-toggle"
+      type="button"
+      aria-label="Switch to light mode"
+      aria-pressed="false"
+      title="Toggle light / dark theme">
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
   </nav>
+
 </header>
 
+
+<!-- =========================================================
+     HERO
+========================================================= -->
+
 <section class="hero">
-  <div>
-    <p class="eyebrow">Built for the AWS Agents for Humans Hackathon</p>
-    <h1>Get paid without the awkward emails.</h1>
-    <p>Invoice Chaser watches your open invoices, drafts the right follow-up at the right tone, offers a payment plan when a demand won't land well, and tells you when the cash actually lands — so you don't have to chase anyone yourself.</p>
-    <a href="#ledger" class="cta">Open the ledger ↓</a>
+
+  <div class="hero-content">
+
+    <div class="agent-status-pill">
+      <span class="status-dot"></span>
+      AI agent ready
+    </div>
+
+    <p class="eyebrow">
+      AI-powered collections
+    </p>
+
+    <h1>
+      Get paid without
+      <span class="hero-highlight">the awkward emails</span>
+    </h1>
+
+    <p class="hero-description">
+      Invoice Chaser watches every open invoice, decides who needs
+      attention today, drafts the right follow-up in seconds, and offers
+      a payment plan when a hard demand won't land well.
+    </p>
+
+    <div class="hero-actions">
+
+      <a href="#ledger" class="cta">
+        Open the ledger ↓
+      </a>
+
+      <a href="#how" class="hero-secondary">
+        See how it works →
+      </a>
+
+    </div>
+
+    <div class="hero-meta">
+
+      <span>✓ AI-powered follow-ups</span>
+      <span>✓ Risk-aware decisions</span>
+      <span>✓ Cash-flow forecasting</span>
+
+    </div>
+
   </div>
-  <div class="stamp-art">
-    <div class="slip-line" style="width:70%"></div>
-    <div class="slip-line" style="width:90%"></div>
-    <div class="slip-line short"></div>
-    <div class="slip-line" style="width:80%; margin-top:20px;"></div>
-    <div class="slip-line" style="width:60%"></div>
-    <div class="stamp">PAST DUE</div>
+
+
+  <!-- Hero dashboard visual -->
+
+  <div class="hero-dashboard">
+
+    <div class="dashboard-window">
+
+      <div class="window-header">
+
+        <div class="window-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <span class="window-title">
+          Invoice Chaser Agent
+        </span>
+
+        <span class="window-live">
+          <span></span>
+          LIVE
+        </span>
+
+      </div>
+
+
+      <div class="mini-dashboard">
+
+        <div class="mini-label">
+          COLLECTION OVERVIEW
+        </div>
+
+        <div class="mini-amount">
+          ₹5,626.06
+        </div>
+
+        <div class="mini-subtitle">
+          total outstanding
+        </div>
+
+        <div class="mini-progress">
+          <span></span>
+        </div>
+
+
+        <div class="mini-stats">
+
+          <div>
+            <strong>91</strong>
+            <span>Open</span>
+          </div>
+
+          <div>
+            <strong>11</strong>
+            <span>Overdue</span>
+          </div>
+
+          <div>
+            <strong>₹825</strong>
+            <span>At risk</span>
+          </div>
+
+        </div>
+
+
+        <div class="mini-alert">
+
+          <span class="alert-icon">!</span>
+
+          <div>
+            <strong>Agent attention required</strong>
+            <p>1 invoice is significantly overdue.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
   </div>
+
 </section>
+
+
+
+<!-- =========================================================
+     HOW IT WORKS
+========================================================= -->
+
+<section class="how-section" id="how">
+
+  <div class="section-heading">
+
+    <div>
+      <span class="section-kicker">
+        HOW IT WORKS
+      </span>
+
+      <h2>
+        Your collections,
+        <span>without the chasing.</span>
+      </h2>
+    </div>
+
+    <p>
+      Invoice Chaser combines invoice analysis, client risk,
+      agent-generated communication and cash-flow forecasting
+      into one workflow.
+    </p>
+
+  </div>
+
+
+  <div class="workflow-grid">
+
+    <div class="workflow-card">
+
+      <span class="workflow-number">01</span>
+
+      <div class="workflow-icon">
+        ◫
+      </div>
+
+      <h3>
+        Analyze
+      </h3>
+
+      <p>
+        Load the sample ledger or upload your own invoice data.
+        The system identifies open and overdue invoices.
+      </p>
+
+    </div>
+
+
+    <div class="workflow-card">
+
+      <span class="workflow-number">02</span>
+
+      <div class="workflow-icon">
+        ✦
+      </div>
+
+      <h3>
+        Prioritize
+      </h3>
+
+      <p>
+        The agent weighs amount, days overdue, urgency
+        and client history to decide what needs attention first.
+      </p>
+
+    </div>
+
+
+    <div class="workflow-card">
+
+      <span class="workflow-number">03</span>
+
+      <div class="workflow-icon">
+        →
+      </div>
+
+      <h3>
+        Act
+      </h3>
+
+      <p>
+        Generate an appropriate follow-up message, or offer
+        a payment plan when a stronger demand may not work.
+      </p>
+
+    </div>
+
+
+    <div class="workflow-card">
+
+      <span class="workflow-number">04</span>
+
+      <div class="workflow-icon">
+        ↗
+      </div>
+
+      <h3>
+        Forecast
+      </h3>
+
+      <p>
+        See best-case and worst-case cash-flow scenarios
+        and know whether upcoming needs are covered.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     MAIN APPLICATION
+========================================================= -->
 
 <section class="ledger" id="ledger">
 
-  <!-- Data source -->
-  <div class="ledger-card">
-    <h2>1. Choose what to analyze</h2>
-    <p class="caption">Try the sample dataset, or upload your own invoices — nothing you upload is stored.</p>
+  <!-- Loading / error status, populated by main.js -->
+  <div id="status-banner-container"></div>
+
+
+  <!-- =======================================================
+       DATA SOURCE
+  ======================================================== -->
+
+  <div class="ledger-card source-card">
+
+    <div class="card-heading">
+
+      <div>
+
+        <span class="section-number">
+          01
+        </span>
+
+        <h2>
+          Choose what to analyze
+        </h2>
+
+      </div>
+
+      <span class="card-status">
+        Data source
+      </span>
+
+    </div>
+
+    <p class="caption">
+      Try the sample dataset, or upload your own invoices —
+      nothing you upload is stored.
+    </p>
+
 
     <div class="source-toggle">
-      <button class="toggle-btn active" id="btn-sample">Sample dataset</button>
-      <button class="toggle-btn" id="btn-upload">Upload your own</button>
+
+      <button
+        class="toggle-btn active"
+        id="btn-sample"
+        type="button">
+        Sample dataset
+      </button>
+
+      <button
+        class="toggle-btn"
+        id="btn-upload"
+        type="button">
+        Upload your own
+      </button>
+
     </div>
+
+
+    <!-- Sample controls -->
 
     <div id="sample-controls">
+
       <div class="field-row">
+
         <div class="field">
-          <label for="snapshot-date">Snapshot date (simulated "today")</label>
-          <input type="date" id="snapshot-date" value="2013-03-01">
+
+          <label for="snapshot-date">
+            Snapshot date
+            <span>(simulated "today")</span>
+          </label>
+
+          <input
+            type="date"
+            id="snapshot-date"
+            value="2013-03-01">
+
         </div>
+
       </div>
+
     </div>
 
-    <div id="upload-controls" style="display:none;">
-      <div class="file-drop" id="file-drop">
-        <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none;">
-        <span id="file-drop-label">Click to choose a CSV or Excel file</span>
-      </div>
-      <div id="mapping-container" style="display:none; margin-top:16px;">
-        <div class="field-row">
-          <div class="field"><label>Client / customer column</label><select id="map-customer"></select></div>
-          <div class="field"><label>Invoice amount column</label><select id="map-amount"></select></div>
-          <div class="field"><label>Invoice number column</label><select id="map-id"></select></div>
+
+    <!-- Upload controls -->
+
+    <div
+      id="upload-controls"
+      style="display:none;">
+
+      <div
+        class="file-drop"
+        id="file-drop">
+
+        <div class="upload-icon">
+          ↑
         </div>
-        <div class="field-row">
-          <div class="field"><label>Due date column</label><select id="map-due"></select></div>
-          <div class="field"><label>Paid status column (optional)</label><select id="map-paid"></select></div>
-        </div>
-        <button class="cta" style="margin-top:10px;" id="compute-upload-btn">Analyze my invoices</button>
+
+        <strong>
+          Upload your invoice data
+        </strong>
+
+        <span id="file-drop-label">
+          Click to choose a CSV or Excel file
+        </span>
+
       </div>
+
+
+      <input
+        type="file"
+        id="file-input"
+        accept=".csv,.xlsx,.xls"
+        style="display:none;">
+
+
+      <div
+        id="mapping-container"
+        style="display:none; margin-top:16px;">
+
+        <div class="field-row">
+
+          <div class="field">
+
+            <label>
+              Client / customer column
+            </label>
+
+            <select id="map-customer"></select>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Invoice amount column
+            </label>
+
+            <select id="map-amount"></select>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Invoice number column
+            </label>
+
+            <select id="map-id"></select>
+
+          </div>
+
+        </div>
+
+
+        <div class="field-row">
+
+          <div class="field">
+
+            <label>
+              Due date column
+            </label>
+
+            <select id="map-due"></select>
+
+          </div>
+
+
+          <div class="field">
+
+            <label>
+              Paid status column
+              <span>(optional)</span>
+            </label>
+
+            <select id="map-paid"></select>
+
+          </div>
+
+        </div>
+
+
+        <button
+          class="cta cta-block"
+          id="compute-upload-btn"
+          type="button">
+
+          Analyze my invoices →
+
+        </button>
+
+      </div>
+
     </div>
+
   </div>
 
-  <!-- Stats -->
-  <div class="ledger-card">
+
+
+  <!-- =======================================================
+       STATISTICS
+  ======================================================== -->
+
+  <div class="ledger-card stats-card">
+
     <div class="stats-strip">
-      <div class="stat"><div class="label">Open invoices</div><div class="value" id="stat-open">—</div></div>
-      <div class="stat"><div class="label">Overdue</div><div class="value" id="stat-overdue">—</div></div>
-      <div class="stat"><div class="label">Total outstanding</div><div class="value" id="stat-outstanding">—</div></div>
-      <div class="stat"><div class="label">Overdue amount</div><div class="value" id="stat-overdue-amount">—</div></div>
+
+      <div class="stat">
+
+        <div class="stat-icon">
+          ◫
+        </div>
+
+        <div class="label">
+          Open invoices
+        </div>
+
+        <div
+          class="value"
+          id="stat-open">
+          —
+        </div>
+
+        <div class="stat-note">
+          Total active invoices
+        </div>
+
+      </div>
+
+
+      <div class="stat stat-danger">
+
+        <div class="stat-icon">
+          !
+        </div>
+
+        <div class="label">
+          Overdue
+        </div>
+
+        <div
+          class="value"
+          id="stat-overdue">
+          —
+        </div>
+
+        <div class="stat-note">
+          Need attention
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div class="stat-icon">
+          ₹
+        </div>
+
+        <div class="label">
+          Total outstanding
+        </div>
+
+        <div
+          class="value"
+          id="stat-outstanding">
+          —
+        </div>
+
+        <div class="stat-note">
+          Money still to collect
+        </div>
+
+      </div>
+
+
+      <div class="stat stat-warning">
+
+        <div class="stat-icon">
+          !
+        </div>
+
+        <div class="label">
+          Overdue amount
+        </div>
+
+        <div
+          class="value"
+          id="stat-overdue-amount">
+          —
+        </div>
+
+        <div class="stat-note">
+          Currently at risk
+        </div>
+
+      </div>
+
     </div>
+
   </div>
 
-  <!-- Filters + table + chart -->
-  <div class="ledger-card">
-    <h2>2. Overdue invoices</h2>
-    <div class="filters">
-      <div class="field"><label>Search client</label><input type="text" id="search-input" placeholder="Client name..."></div>
-      <div class="field"><label>Urgency</label><div class="tier-chips" id="tier-chips"></div></div>
-      <div class="field"><label>Min amount</label><input type="number" id="amount-min" value="0"></div>
-      <div class="field"><label>Max amount</label><input type="number" id="amount-max" placeholder="No limit"></div>
+
+
+  <!-- =======================================================
+       AI AGENT INSIGHT
+  ======================================================== -->
+
+  <div class="agent-card">
+
+    <div class="agent-card-header">
+
+      <div class="agent-identity">
+
+        <div class="agent-avatar">
+          ✦
+        </div>
+
+        <div>
+
+          <span class="agent-label">
+            INVOICE CHASER AGENT
+          </span>
+
+          <h2>
+            Here's what I found
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <div class="agent-live-badge">
+
+        <span></span>
+
+        Agent ready
+
+      </div>
+
     </div>
+
+
+    <div class="agent-insight">
+
+      <div class="insight-icon">
+        ✦
+      </div>
+
+      <div>
+
+        <strong id="agent-summary">
+          Your invoices are being analyzed.
+        </strong>
+
+        <p>
+          The agent prioritizes overdue invoices based on
+          amount, days overdue, urgency and client history.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="agent-capabilities">
+
+      <div>
+        <span>01</span>
+        Identify priority invoices
+      </div>
+
+      <div>
+        <span>02</span>
+        Draft personalized follow-ups
+      </div>
+
+      <div>
+        <span>03</span>
+        Recommend payment plans
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =======================================================
+       OVERDUE INVOICES
+  ======================================================== -->
+
+  <div class="ledger-card">
+
+    <div class="card-heading">
+
+      <div>
+
+        <span class="section-number">
+          02
+        </span>
+
+        <h2>
+          Overdue invoices
+        </h2>
+
+      </div>
+
+      <span class="card-status danger">
+        Needs attention
+      </span>
+
+    </div>
+
+    <p class="caption">
+      Filter your overdue invoices by client, urgency or amount.
+    </p>
+
+
+    <div class="filters">
+
+      <div class="field search-field">
+
+        <label>
+          Search client
+        </label>
+
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Client name...">
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Urgency
+        </label>
+
+        <div
+          class="tier-chips"
+          id="tier-chips">
+        </div>
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Min amount
+        </label>
+
+        <input
+          type="number"
+          id="amount-min"
+          value="0">
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Max amount
+        </label>
+
+        <input
+          type="number"
+          id="amount-max"
+          placeholder="No limit">
+
+      </div>
+
+    </div>
+
 
     <div class="split">
-      <div>
+
+      <div class="table-wrapper">
+
         <table class="ledger-table">
-          <thead><tr><th>Client</th><th>Invoice #</th><th>Amount</th><th>Due</th><th>Days late</th><th>Tier</th></tr></thead>
+
+          <thead>
+
+            <tr>
+              <th>Client</th>
+              <th>Invoice #</th>
+              <th>Amount</th>
+              <th>Due</th>
+              <th>Days late</th>
+              <th>Tier</th>
+            </tr>
+
+          </thead>
+
           <tbody id="invoice-table-body"></tbody>
+
         </table>
-        <div class="empty-state" id="table-empty" style="display:none;">No invoices match these filters.</div>
+
+
+        <div
+          class="empty-state"
+          id="table-empty"
+          style="display:none;">
+
+          No invoices match these filters.
+
+        </div>
+
       </div>
+
+
+      <div class="chart-panel">
+
+        <div class="chart-title">
+          <span>
+            Urgency breakdown
+          </span>
+
+          <small>
+            Amount by tier
+          </small>
+        </div>
+
+        <canvas
+          id="tier-chart"
+          height="220">
+        </canvas>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =======================================================
+       ACTION PLAN
+  ======================================================== -->
+
+  <div class="ledger-card">
+
+    <div class="card-heading">
+
       <div>
-        <canvas id="tier-chart" height="220"></canvas>
-      </div>
-    </div>
-  </div>
 
-  <!-- Action plan -->
-  <div class="ledger-card">
-    <h2>3. This week's action plan</h2>
-    <p class="caption">Ranked by money at stake, how overdue it is, and (when known) the client's track record.</p>
+        <span class="section-number">
+          03
+        </span>
+
+        <h2>
+          This week's action plan
+        </h2>
+
+      </div>
+
+      <span class="card-status">
+        AI prioritized
+      </span>
+
+    </div>
+
+    <p class="caption">
+      Ranked by money at stake, how overdue it is, and
+      when known, the client's track record.
+    </p>
+
+
+    <div class="action-plan-header">
+      <span>Priority</span>
+      <span>Invoice</span>
+      <span>Recommended action</span>
+    </div>
+
+
     <div id="action-plan-list"></div>
+
   </div>
 
-  <!-- Forecast -->
-  <div class="ledger-card">
-    <h2>4. Cash flow forecast</h2>
-    <p class="caption">Best case: everyone pays on their due date. Worst case: each client pays based on their own track record.</p>
-    <canvas id="forecast-chart" height="200"></canvas>
-    <div class="slider-row" style="margin-top:14px;">
-      <label for="horizon-slider">Horizon:</label>
-      <input type="range" id="horizon-slider" min="7" max="120" value="60">
-      <span id="horizon-value">60 days</span>
-    </div>
-    <div class="field-row" style="margin-top:14px;">
-      <div class="field"><label>Check cash available by</label><input type="date" id="target-date"></div>
-      <div class="field"><label>Amount you need (₹)</label><input type="number" id="target-amount" value="0"></div>
-    </div>
-    <div id="forecast-result" style="margin-top:10px; font-size:0.9rem;"></div>
-  </div>
 
-  <!-- Reminder drafting -->
-  <div class="ledger-card">
-    <h2>5. Draft a reminder</h2>
-    <div class="field">
-      <label for="invoice-select">Pick an overdue invoice</label>
-      <select id="invoice-select"></select>
-    </div>
-    <div id="risk-badge-container" style="margin:14px 0;"></div>
-    <div class="slip-output" id="reminder-output" style="margin-top:14px;">Select an invoice above to draft a reminder.</div>
 
-    <div id="payment-plan-section" style="display:none; margin-top:22px;">
-      <h2 style="font-size:1.05rem;">💳 Consider a payment plan instead</h2>
-      <p class="caption">This one's significantly overdue — a blunt demand may not land well.</p>
-      <div class="slider-row">
-        <label for="installments-slider">Installments:</label>
-        <input type="range" id="installments-slider" min="2" max="4" value="3">
-        <span id="installments-value">3</span>
+  <!-- =======================================================
+       CASH FLOW FORECAST
+  ======================================================== -->
+
+  <div class="ledger-card forecast-card">
+
+    <div class="card-heading">
+
+      <div>
+
+        <span class="section-number">
+          04
+        </span>
+
+        <h2>
+          Cash flow forecast
+        </h2>
+
       </div>
-      <div class="slip-output" id="payment-plan-output" style="margin-top:12px;"></div>
+
+      <span class="card-status">
+        Projection
+      </span>
+
     </div>
+
+    <p class="caption">
+      Best case: everyone pays on their due date.
+      Worst case: each client pays based on their own track record.
+    </p>
+
+
+    <div class="forecast-legend">
+
+      <span>
+        <i class="legend-dot best"></i>
+        Best case
+      </span>
+
+      <span>
+        <i class="legend-dot worst"></i>
+        Worst case
+      </span>
+
+    </div>
+
+
+    <canvas
+      id="forecast-chart"
+      height="200">
+    </canvas>
+
+
+    <div
+      class="forecast-controls">
+
+      <div class="slider-row">
+
+        <label for="horizon-slider">
+          Horizon
+        </label>
+
+        <input
+          type="range"
+          id="horizon-slider"
+          min="7"
+          max="120"
+          value="60">
+
+        <span id="horizon-value">
+          60 days
+        </span>
+
+      </div>
+
+
+      <div class="field-row">
+
+        <div class="field">
+
+          <label for="target-date">
+            Check cash available by
+          </label>
+
+          <input
+            type="date"
+            id="target-date">
+
+        </div>
+
+
+        <div class="field">
+
+          <label for="target-amount">
+            Amount you need (₹)
+          </label>
+
+          <input
+            type="number"
+            id="target-amount"
+            value="0">
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="forecast-result"
+      class="forecast-result"
+      style="margin-top:10px;">
+    </div>
+
+  </div>
+
+
+
+  <!-- =======================================================
+       AI REMINDER
+  ======================================================== -->
+
+  <div class="ledger-card reminder-card">
+
+    <div class="card-heading">
+
+      <div>
+
+        <span class="section-number">
+          05
+        </span>
+
+        <h2>
+          Draft a reminder
+        </h2>
+
+      </div>
+
+      <span class="card-status ai-status">
+        AI generated
+      </span>
+
+    </div>
+
+    <p class="caption">
+      Select an overdue invoice and let the agent decide
+      how the follow-up should sound.
+    </p>
+
+
+    <div class="field">
+
+      <label for="invoice-select">
+        Pick an overdue invoice
+      </label>
+
+      <select id="invoice-select"></select>
+
+    </div>
+
+
+    <div
+      id="risk-badge-container"
+      style="margin:18px 0;">
+    </div>
+
+
+    <div class="ai-output-header">
+
+      <div>
+        <span class="section-kicker">
+          AGENT RESPONSE
+        </span>
+
+        <h3>
+          Personalized follow-up
+        </h3>
+      </div>
+
+      <span class="generated-label">
+        AI
+      </span>
+
+    </div>
+
+
+    <div
+      class="slip-output"
+      id="reminder-output">
+
+      Select an invoice above to draft a reminder.
+
+    </div>
+
+
+    <div class="reminder-actions">
+
+      <button
+        class="btn-secondary"
+        type="button"
+        onclick="copyReminder()">
+
+        Copy message
+
+      </button>
+
+    </div>
+
+
+
+    <!-- Payment plan -->
+
+    <div
+      id="payment-plan-section"
+      class="payment-plan-section"
+      style="display:none;">
+
+      <div class="payment-plan-heading">
+
+        <div class="plan-icon">
+          ₹
+        </div>
+
+        <div>
+
+          <h2>
+            Consider a payment plan instead
+          </h2>
+
+          <p class="caption">
+            This invoice is significantly overdue.
+            A flexible plan may be more effective than
+            a blunt demand.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="slider-row">
+
+        <label for="installments-slider">
+          Installments
+        </label>
+
+        <input
+          type="range"
+          id="installments-slider"
+          min="2"
+          max="4"
+          value="3">
+
+        <span id="installments-value">
+          3
+        </span>
+
+      </div>
+
+
+      <div
+        class="slip-output"
+        id="payment-plan-output"
+        style="margin-top:12px;">
+      </div>
+
+    </div>
+
   </div>
 
 </section>
 
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
 <footer class="site-footer">
-  Built with the <a href="https://strandsagents.com" target="_blank">Strands Agents SDK</a> for the AWS Agents for Humans Hackathon.
-  <br>Data: IBM public Accounts Receivable dataset. &nbsp;·&nbsp; <a href="https://github.com/Kanakbaghel/invoice-chaser" target="_blank">View source on GitHub</a>
+
+  <div class="footer-brand">
+    <span class="mark">IC</span>
+    <strong>Invoice Chaser</strong>
+  </div>
+
+  <p>
+    © 2026 Invoice Chaser. All rights reserved.
+  </p>
+
 </footer>
 
+
+
+<!-- =========================================================
+     SCRIPTS
+========================================================= -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <script src="/static/js/main.js"></script>
+
+
+<!-- Small UI helper -->
+<script>
+
+function copyReminder() {
+
+  const output =
+    document.getElementById("reminder-output");
+
+  if (!output) return;
+
+  const text =
+    output.textContent.trim();
+
+  if (!text ||
+      text === "Select an invoice above to draft a reminder.") {
+    return;
+  }
+
+  navigator.clipboard.writeText(text)
+    .then(() => {
+
+      const button =
+        document.querySelector(".reminder-actions .btn-secondary");
+
+      if (!button) return;
+
+      const original =
+        button.textContent;
+
+      button.textContent =
+        "Copied ✓";
+
+      setTimeout(() => {
+        button.textContent =
+          original;
+      }, 1800);
+
+    })
+    .catch(() => {
+      alert("Unable to copy the message.");
+    });
+
+}
+
+</script>
+
 </body>
 </html>

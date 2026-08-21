@@ -9,10 +9,73 @@ const TIER_LABELS = { gentle: "Gentle", polite_followup: "Follow-up", firm: "Fir
 
 // ---------------- Init ----------------
 document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
   buildTierChips();
   attachListeners();
   loadSample();
 });
+
+// ---------------- Theme (dark / light) ----------------
+function initTheme() {
+  const toggle = document.getElementById("theme-toggle");
+  if (!toggle) return;
+
+  const root = document.documentElement;
+
+  const getPreferredTheme = () => {
+    const saved = safeStorageGet("ic-theme");
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  };
+
+  const applyTheme = (theme) => {
+    root.setAttribute("data-theme", theme);
+    toggle.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+    toggle.setAttribute("aria-label", theme === "light" ? "Switch to dark mode" : "Switch to light mode");
+    updateChartThemeColors();
+  };
+
+  // The inline <script> in <head> already set the initial attribute to avoid
+  // a flash of the wrong theme — just sync state and wire the click handler.
+  applyTheme(getPreferredTheme());
+
+  toggle.addEventListener("click", () => {
+    const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+    applyTheme(next);
+    safeStorageSet("ic-theme", next);
+  });
+
+  // Follow the OS theme if the user hasn't explicitly chosen one yet.
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (e) => {
+      if (safeStorageGet("ic-theme")) return; // user has an explicit preference
+      applyTheme(e.matches ? "light" : "dark");
+    });
+  }
+}
+
+function safeStorageGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+
+function safeStorageSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) { /* ignore (private mode, etc.) */ }
+}
+
+// Re-draw charts so their gridlines/labels pick up the new theme colors.
+function updateChartThemeColors() {
+  if (!bundle) return;
+  applyFilters();
+  renderForecastChart();
+}
+
+function getChartColors() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    text: styles.getPropertyValue("--text-secondary").trim() || "#a9b7cc",
+    grid: styles.getPropertyValue("--border").trim() || "rgba(255,255,255,0.08)",
+  };
+}
 
 function buildTierChips() {
   const container = document.getElementById("tier-chips");
@@ -65,12 +128,70 @@ function switchSource(mode) {
   if (mode === "sample") loadSample();
 }
 
+// ---------------- Status banner (loading / error) ----------------
+function showBanner(kind, message, retryFn) {
+  const container = document.getElementById("status-banner-container");
+  if (!container) return;
+
+  const banner = document.createElement("div");
+  banner.className = `status-banner ${kind}`;
+
+  const icon = document.createElement("span");
+  icon.className = "banner-icon";
+  icon.textContent = kind === "error" ? "!" : "…";
+  banner.appendChild(icon);
+
+  const text = document.createElement("div");
+  text.textContent = message;
+  banner.appendChild(text);
+
+  if (retryFn) {
+    const btn = document.createElement("button");
+    btn.className = "retry-btn";
+    btn.type = "button";
+    btn.textContent = "Retry";
+    btn.onclick = retryFn;
+    banner.appendChild(btn);
+  }
+
+  container.innerHTML = "";
+  container.appendChild(banner);
+}
+
+function clearBanner() {
+  const container = document.getElementById("status-banner-container");
+  if (container) container.innerHTML = "";
+}
+
+function setStatsLoading(isLoading) {
+  ["stat-open", "stat-overdue", "stat-outstanding", "stat-overdue-amount"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle("is-loading", isLoading);
+    if (isLoading) el.textContent = "0000";
+  });
+}
+
 // ---------------- Data loading ----------------
 async function loadSample() {
   const snapshot = document.getElementById("snapshot-date").value || "2013-03-01";
-  const res = await fetch(`/api/sample?snapshot=${snapshot}`);
-  const data = await res.json();
-  setBundle(data);
+  setStatsLoading(true);
+  showBanner("loading", "Analyzing invoices…");
+  try {
+    const res = await fetch(`/api/sample?snapshot=${snapshot}`);
+    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    clearBanner();
+    setBundle(data);
+  } catch (err) {
+    setStatsLoading(false);
+    showBanner(
+      "error",
+      `Couldn't load the sample ledger. ${err.message || "The server didn't respond."}`,
+      loadSample
+    );
+  }
 }
 
 async function handleFileSelect(e) {
@@ -105,12 +226,23 @@ async function computeUpload() {
     due_col: document.getElementById("map-due").value,
     paid_col: document.getElementById("map-paid").value || null,
   };
-  const res = await fetch("/api/upload/compute", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (data.error) { alert(data.error); return; }
-  setBundle(data);
+
+  setStatsLoading(true);
+  showBanner("loading", "Analyzing your invoices…");
+
+  try {
+    const res = await fetch("/api/upload/compute", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    clearBanner();
+    setBundle(data);
+  } catch (err) {
+    setStatsLoading(false);
+    showBanner("error", `Couldn't analyze that file. ${err.message || "The server didn't respond."}`, computeUpload);
+  }
 }
 
 // ---------------- Rendering ----------------
@@ -181,7 +313,8 @@ function renderTierChart(rows) {
 
   const ctx = document.getElementById("tier-chart");
   const dataValues = Object.keys(TIER_LABELS).map((t) => totals[t]);
-  const colors = ["#2F6F68", "#C89A3E", "#B3382C", "#7a1f16"];
+  const colors = ["#2dd4bf", "#fbbf24", "#fb7185", "#ef4444"];
+  const chartColors = getChartColors();
 
   if (tierChart) tierChart.destroy();
   tierChart = new Chart(ctx, {
@@ -191,8 +324,14 @@ function renderTierChart(rows) {
       datasets: [{ data: dataValues, backgroundColor: colors, borderRadius: 4 }],
     },
     options: {
-      plugins: { legend: { display: false }, title: { display: true, text: "By urgency (₹)" } },
-      scales: { y: { beginAtZero: true } },
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: "By urgency (₹)", color: chartColors.text },
+      },
+      scales: {
+        x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+        y: { beginAtZero: true, ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+      },
     },
   });
 }
@@ -230,17 +369,24 @@ function renderForecastChart() {
   });
 
   const ctx = document.getElementById("forecast-chart");
+  const chartColors = getChartColors();
   if (forecastChart) forecastChart.destroy();
   forecastChart = new Chart(ctx, {
     type: "line",
     data: {
       labels: dates,
       datasets: [
-        { label: "Best case", data: best, borderColor: "#2F6F68", backgroundColor: "rgba(47,111,104,0.1)", tension: 0.2, fill: true },
-        { label: "Worst case", data: worst, borderColor: "#B3382C", backgroundColor: "rgba(179,56,44,0.08)", tension: 0.2, fill: true },
+        { label: "Best case", data: best, borderColor: "#2dd4bf", backgroundColor: "rgba(45,212,191,0.12)", tension: 0.2, fill: true },
+        { label: "Worst case", data: worst, borderColor: "#fb7185", backgroundColor: "rgba(251,113,133,0.10)", tension: 0.2, fill: true },
       ],
     },
-    options: { plugins: { legend: { position: "bottom" } } },
+    options: {
+      plugins: { legend: { position: "bottom", labels: { color: chartColors.text } } },
+      scales: {
+        x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+        y: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+      },
+    },
   });
 }
 
