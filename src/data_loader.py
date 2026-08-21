@@ -67,14 +67,13 @@ def get_open_invoices(df: pd.DataFrame, as_of_date: str) -> pd.DataFrame:
 
 
 def reminder_tier(days_overdue: int) -> str:
-    """Classify how firm the reminder tone should be."""
     if days_overdue <= 0:
         return "not_due"
-    elif days_overdue <= 7:
+    elif days_overdue <= 5:
         return "gentle"
-    elif days_overdue <= 21:
+    elif days_overdue <= 13:
         return "polite_followup"
-    elif days_overdue <= 45:
+    elif days_overdue <= 25:
         return "firm"
     else:
         return "urgent"
