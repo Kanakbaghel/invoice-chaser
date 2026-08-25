@@ -39,7 +39,13 @@ def build_action_plan(overdue_df: pd.DataFrame, client_risk_df: pd.DataFrame = N
     df["PriorityScore"] = (amount_score + tier_score + risk_score).round(1)
 
     def recommend(row):
-        if row["Tier"] in ("firm", "urgent"):
+        # Eve's analysis found disputed invoices run ~4.4x later on average
+        # than non-disputed ones — escalating tone on a genuine dispute can
+        # backfire, so route these to dispute resolution instead of a
+        # firmer reminder or a payment plan offer.
+        if row.get("Disputed") == "Yes":
+            return "Resolve dispute first"
+        elif row["Tier"] in ("firm", "urgent"):
             return "Offer payment plan"
         elif row["Tier"] == "polite_followup":
             return "Send follow-up reminder"

@@ -1816,6 +1816,110 @@ canvas {
   color: var(--danger);
 }
 
+/* ---------------- Decision Explainer ---------------- */
+
+.decision-explainer {
+  margin: 18px 0 24px;
+  padding: 18px 20px;
+
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+
+  background: var(--surface);
+}
+
+.explainer-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.explainer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.explainer-heading h3 {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  font-size: 0.98rem;
+  color: var(--text);
+}
+
+.explainer-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.explainer-item:first-of-type {
+  border-top: none;
+  padding-top: 8px;
+}
+
+.explainer-label {
+  flex: 0 0 96px;
+  padding-top: 2px;
+
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.explainer-item p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+/* ---------------- Methodology ---------------- */
+
+.methodology-section {
+  padding-top: 10px;
+}
+
+.methodology-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.methodology-card {
+  padding: 20px;
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  background: var(--surface);
+}
+
+.methodology-takeaway {
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
 /* ---------------- Payment plan ---------------- */
 
 .payment-plan-section {
@@ -1986,6 +2090,10 @@ input[type="range"] {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .methodology-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .agent-capabilities {
     grid-template-columns: 1fr;
   }
@@ -2051,6 +2159,19 @@ input[type="range"] {
 
   .workflow-grid {
     grid-template-columns: 1fr;
+  }
+
+  .methodology-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .explainer-item {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .explainer-label {
+    flex: none;
   }
 
   .ledger {

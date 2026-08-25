@@ -4,6 +4,9 @@ let uploadToken = null;
 let activeTiers = new Set(["gentle", "polite_followup", "firm", "urgent"]);
 let tierChart = null;
 let forecastChart = null;
+let tierThresholdChart = null;
+let riskThresholdChart = null;
+let priorityWeightChart = null;
 
 const TIER_LABELS = { gentle: "Gentle", polite_followup: "Follow-up", firm: "Firm", urgent: "Urgent" };
 
@@ -12,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   buildTierChips();
   attachListeners();
+  renderMethodologyCharts();
   loadSample();
 });
 
@@ -64,6 +68,7 @@ function safeStorageSet(key, value) {
 
 // Re-draw charts so their gridlines/labels pick up the new theme colors.
 function updateChartThemeColors() {
+  renderMethodologyCharts();
   if (!bundle) return;
   applyFilters();
   renderForecastChart();
@@ -260,8 +265,12 @@ function setBundle(data) {
   renderForecastChart();
   updateForecastResult();
 
+  const summaryEl = document.getElementById("agent-summary");
+  if (summaryEl && data.impact) summaryEl.textContent = data.impact.summary_text;
+
   document.getElementById("reminder-output").textContent = "Select an invoice above to draft a reminder.";
   document.getElementById("payment-plan-section").style.display = "none";
+  document.getElementById("decision-explainer").style.display = "none";
 }
 
 function renderStats(s) {
@@ -438,12 +447,119 @@ async function onInvoiceSelect() {
     riskContainer.innerHTML = "";
   }
 
+  // ---- Decision Explainer: show the "why" behind tone, risk, and rank ----
+  document.getElementById("decision-explainer").style.display = "block";
+  document.getElementById("explain-tier").textContent = row.why;
+
+  const riskRow = document.getElementById("explain-risk-row");
+  if (risk) {
+    document.getElementById("explain-risk").textContent = risk.why;
+    riskRow.style.display = "flex";
+  } else {
+    riskRow.style.display = "none";
+  }
+
+  const priorityRow = document.getElementById("explain-priority-row");
+  const planItem = bundle.action_plan.find((p) => p.invoice_number === invoiceNumber);
+  if (planItem) {
+    document.getElementById("explain-priority").textContent = planItem.why;
+    priorityRow.style.display = "flex";
+  } else {
+    priorityRow.style.display = "none";
+  }
+
   const planSection = document.getElementById("payment-plan-section");
   if (row.tier === "firm" || row.tier === "urgent") {
     planSection.style.display = "block";
     fetchPaymentPlan();
   } else {
     planSection.style.display = "none";
+  }
+}
+
+// ---------------- Methodology charts ----------------
+// These visualize the actual constants the backend uses (data_loader.py's
+// reminder_tier(), client_risk.py's _risk_level(), weekly_brief.py's score
+// weights) — not sample-data-dependent, so they render once on load and
+// again whenever the theme changes.
+function renderMethodologyCharts() {
+  if (typeof Chart === "undefined") return;
+  const chartColors = getChartColors();
+  const commonScales = {
+    x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+    y: { ticks: { color: chartColors.text }, grid: { display: false } },
+  };
+
+  const tierCtx = document.getElementById("chart-tier-thresholds");
+  if (tierCtx) {
+    if (tierThresholdChart) tierThresholdChart.destroy();
+    tierThresholdChart = new Chart(tierCtx, {
+      type: "bar",
+      data: {
+        labels: ["Gentle", "Follow-up", "Firm", "Urgent"],
+        datasets: [{
+          data: [[0, 5], [6, 13], [14, 25], [26, 40]],
+          backgroundColor: ["#4ade80", "#fbbf24", "#fb7185", "#ef4444"],
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: "y",
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ...commonScales.x, title: { display: true, text: "Days overdue", color: chartColors.text } },
+          y: commonScales.y,
+        },
+      },
+    });
+  }
+
+  const riskCtx = document.getElementById("chart-risk-thresholds");
+  if (riskCtx) {
+    if (riskThresholdChart) riskThresholdChart.destroy();
+    riskThresholdChart = new Chart(riskCtx, {
+      type: "bar",
+      data: {
+        labels: ["Low", "Medium", "High"],
+        datasets: [{
+          data: [[0, 2], [2, 10], [10, 20]],
+          backgroundColor: ["#4ade80", "#fbbf24", "#ef4444"],
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: "y",
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ...commonScales.x, title: { display: true, text: "Avg. days late (High is 10+)", color: chartColors.text } },
+          y: commonScales.y,
+        },
+      },
+    });
+  }
+
+  const priorityCtx = document.getElementById("chart-priority-weights");
+  if (priorityCtx) {
+    if (priorityWeightChart) priorityWeightChart.destroy();
+    priorityWeightChart = new Chart(priorityCtx, {
+      type: "bar",
+      data: {
+        labels: ["Max points (of 10)"],
+        datasets: [
+          { label: "Amount", data: [3], backgroundColor: "#60a5fa" },
+          { label: "Urgency", data: [4], backgroundColor: "#fb7185" },
+          { label: "Client risk", data: [3], backgroundColor: "#fbbf24" },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        scales: {
+          x: { ...commonScales.x, stacked: true, max: 10 },
+          y: { ...commonScales.y, stacked: true },
+        },
+        plugins: { legend: { position: "bottom", labels: { color: chartColors.text } } },
+      },
+    });
   }
 }
 

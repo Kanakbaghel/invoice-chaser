@@ -4,18 +4,24 @@ forecast.py
 Projects when outstanding invoice money is actually likely to arrive —
 not just "how much is owed" but "when will I realistically have it."
 
-Two scenarios:
-- Best case: everyone pays on their due date (or immediately, if already overdue)
-- Worst case: each client pays based on their own historical lateness
-  (a chronically-late client is assumed to stay chronically late)
+Two scenarios, built from each client's own settlement history
+(median and 90th-percentile days late) rather than a flat guessed
+buffer — a methodology change based on Eve's analysis notebook:
+- Best case: each client pays at their own MEDIAN days-late (typical behavior)
+- Worst case: each client pays at their own 90th-PERCENTILE days-late
+  (a bad-but-plausible outcome, not their single worst-ever invoice)
+
+Clients with no history fall back to a flat default (new-client case).
 """
 
 import pandas as pd
 
+DEFAULT_MEDIAN_BUFFER_DAYS = 0   # no history: assume on-time for best case
+DEFAULT_P90_BUFFER_DAYS = 14     # no history: assume a two-week slip for worst case
+
 
 def project_cash_flow(open_df: pd.DataFrame, as_of: pd.Timestamp,
-                       client_risk_df: pd.DataFrame = None,
-                       default_buffer_days: int = 14) -> pd.DataFrame:
+                       client_risk_df: pd.DataFrame = None) -> pd.DataFrame:
     """
     Returns a DataFrame indexed by date with cumulative expected cash
     under 'Best case' and 'Worst case' columns.
@@ -28,14 +34,20 @@ def project_cash_flow(open_df: pd.DataFrame, as_of: pd.Timestamp,
         amt = r["InvoiceAmount"]
         due = r["DueDate"]
 
-        best_date = max(due, as_of)
+        best_buffer = DEFAULT_MEDIAN_BUFFER_DAYS
+        worst_buffer = DEFAULT_P90_BUFFER_DAYS
 
-        buffer_days = default_buffer_days
         if client_risk_df is not None and not client_risk_df.empty:
             match = client_risk_df[client_risk_df["customerID"] == r["customerID"]]
             if not match.empty:
-                buffer_days = max(int(match.iloc[0]["avg_days_late"]), 0)
-        worst_date = max(due + pd.Timedelta(days=buffer_days), as_of)
+                row = match.iloc[0]
+                if "median_days_late" in row and pd.notna(row["median_days_late"]):
+                    best_buffer = max(float(row["median_days_late"]), 0)
+                if "p90_days_late" in row and pd.notna(row["p90_days_late"]):
+                    worst_buffer = max(float(row["p90_days_late"]), best_buffer)
+
+        best_date = max(due + pd.Timedelta(days=best_buffer), as_of)
+        worst_date = max(due + pd.Timedelta(days=worst_buffer), as_of)
 
         events.append({"date": best_date, "amount": amt, "scenario": "Best case"})
         events.append({"date": worst_date, "amount": amt, "scenario": "Worst case"})

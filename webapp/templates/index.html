@@ -47,6 +47,7 @@
   <nav class="site-nav">
     <a href="#ledger">Dashboard</a>
     <a href="#how">How it works</a>
+    <a href="#methodology">Methodology</a>
 
     <button
       id="theme-toggle"
@@ -1078,6 +1079,43 @@
     </div>
 
 
+    <!-- Decision Explainer: plain-English "why" behind the agent's call -->
+    <div
+      id="decision-explainer"
+      class="decision-explainer"
+      style="display:none;">
+
+      <div class="explainer-heading">
+
+        <div class="explainer-icon">
+          ◆
+        </div>
+
+        <div>
+          <span class="section-kicker">DECISION EXPLAINER</span>
+          <h3>Why the agent chose this</h3>
+        </div>
+
+      </div>
+
+      <div class="explainer-item">
+        <span class="explainer-label">Tone</span>
+        <p id="explain-tier"></p>
+      </div>
+
+      <div class="explainer-item" id="explain-risk-row" style="display:none;">
+        <span class="explainer-label">Client risk</span>
+        <p id="explain-risk"></p>
+      </div>
+
+      <div class="explainer-item" id="explain-priority-row" style="display:none;">
+        <span class="explainer-label">Priority rank</span>
+        <p id="explain-priority"></p>
+      </div>
+
+    </div>
+
+
     <div class="ai-output-header">
 
       <div>
@@ -1176,6 +1214,92 @@
         id="payment-plan-output"
         style="margin-top:12px;">
       </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     METHODOLOGY / DATA-DRIVEN DESIGN
+========================================================= -->
+
+<section class="how-section methodology-section" id="methodology">
+
+  <div class="section-heading">
+
+    <div>
+      <span class="section-kicker">
+        METHODOLOGY
+      </span>
+
+      <h2>
+        Data-driven design,
+        <span>not vibes.</span>
+      </h2>
+    </div>
+
+    <p>
+      Every threshold below is a constant in the code — not a
+      subjective call made per invoice. This is what actually
+      decides tone, risk, and priority.
+    </p>
+
+  </div>
+
+
+  <div class="methodology-grid">
+
+    <div class="methodology-card">
+
+      <div class="chart-title">
+        <span>Urgency thresholds</span>
+        <small>Days overdue → tone</small>
+      </div>
+
+      <canvas id="chart-tier-thresholds" height="190"></canvas>
+
+      <p class="methodology-takeaway">
+        Tone escalates at fixed cut-points — 5, 13, and 25 days —
+        not a subjective judgment call made per invoice.
+      </p>
+
+    </div>
+
+
+    <div class="methodology-card">
+
+      <div class="chart-title">
+        <span>Client risk cutoffs</span>
+        <small>Avg. days late → risk band</small>
+      </div>
+
+      <canvas id="chart-risk-thresholds" height="190"></canvas>
+
+      <p class="methodology-takeaway">
+        A client averaging just 3 days late already tips into
+        "Medium" — the bands are intentionally tight.
+      </p>
+
+    </div>
+
+
+    <div class="methodology-card">
+
+      <div class="chart-title">
+        <span>Priority score weighting</span>
+        <small>Max points contributed, of 10</small>
+      </div>
+
+      <canvas id="chart-priority-weights" height="190"></canvas>
+
+      <p class="methodology-takeaway">
+        Urgency carries the most weight (4 of 10) — a large invoice
+        can't out-rank a severely overdue one just by size.
+      </p>
 
     </div>
 

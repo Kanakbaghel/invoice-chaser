@@ -20,23 +20,28 @@ def compute_client_risk(df: pd.DataFrame, as_of_date: str) -> pd.DataFrame:
     tend to pay.
 
     Returns one row per customer with: num_invoices, avg_days_late,
-    pct_disputed, risk_level.
+    median_days_late, p90_days_late, pct_disputed, risk_level.
     """
     as_of = pd.Timestamp(as_of_date)
     history = df[df["SettledDate"] <= as_of].copy()
 
     if history.empty:
         return pd.DataFrame(columns=[
-            "customerID", "num_invoices", "avg_days_late", "pct_disputed", "risk_level"
+            "customerID", "num_invoices", "avg_days_late", "median_days_late",
+            "p90_days_late", "pct_disputed", "risk_level"
         ])
 
     grouped = history.groupby("customerID").agg(
         num_invoices=("invoiceNumber", "count"),
         avg_days_late=("DaysLate", "mean"),
+        median_days_late=("DaysLate", "median"),
+        p90_days_late=("DaysLate", lambda s: s.quantile(0.9)),
         pct_disputed=("Disputed", lambda s: (s == "Yes").mean() * 100),
     ).reset_index()
 
     grouped["avg_days_late"] = grouped["avg_days_late"].round(1)
+    grouped["median_days_late"] = grouped["median_days_late"].round(1)
+    grouped["p90_days_late"] = grouped["p90_days_late"].round(1)
     grouped["pct_disputed"] = grouped["pct_disputed"].round(0)
     grouped["risk_level"] = grouped["avg_days_late"].apply(_risk_level)
 
