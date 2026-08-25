@@ -158,7 +158,7 @@ This project uses IBM's publicly available **Accounts Receivable — Late Paymen
 | Name | Role | Where are we from | About Us |
 |---|---|----|-----|
 | [Kanak Baghel](https://www.linkedin.com/in/kanakbaghel/) | Lead / Organizer | Greater Delhi Area, India |  Data Science & Business Analytics Graduate, Experienced at TechNest & IIT Guwahati (Emeritus) |
-| [Usman Oluwakemisola Eve](https://www.linkedin.com/in/usman-oluwakemisola-eve/) | Data Analysis | Abuja, Federal Capital Territory, Nigeria | Advanced Business Intelligence(BI) Analyst |
+| [Usman Oluwakemisola Eve](https://www.linkedin.com/in/usman-oluwakemisola-eve/) | Data Analysis & QA | Abuja, Federal Capital Territory, Nigeria | Advanced Business Intelligence(BI) Analyst |
 | [Rahma Shahbaz](https://www.linkedin.com/in/rahma-shahbaz-660841378/) | Web Development | Sahiwal, Punjab, Pakistan | Aspiring AI & Frontend Developer and Azure AI Fundamentals Certified |
 | [Nana Bonsu](https://www.linkedin.com/in/nana-bonsu/) | AWS & Agent Architecture | Bronx, New York, United States | Software Engineer, Building AI-Powered Mobile & Web Applications |
 ---
