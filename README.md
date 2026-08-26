@@ -51,8 +51,14 @@ Invoice Chaser is an agent that works through a business's invoice ledger and ta
 | 🧠 **Explains its decisions** | Surfaces *why* the agent flagged or prioritized an invoice the way it did |
 | 🗓️ **Generates a weekly brief** | A digestible summary of what needs attention this week |
 | 🌐 **Multi-language reminders** | Draft translation support for reaching international clients |
+| 🎯 **Flags customer concentration** | Warns when too much outstanding AR is tied up in a single client |
 
 This isn't a dashboard that just shows you numbers — it's an agent that does the follow-up work itself.
+
+---
+
+## 📊 Data-Driven Design
+Every threshold in this project (reminder tiers, risk levels, concentration flags) was validated against the real IBM dataset rather than picked arbitrarily. [See the analysis notebook](link).
 
 ---
 
@@ -109,7 +115,8 @@ invoice-chaser/
 │   └── agent.py                    # Strands Agent — wraps the above as tools
 ├── webapp/
 │   ├── app.py                      # Flask app entry point
-│   └── ...                         # templates, static assets, dashboard views
+│   ├── engine.py                   # bundles all modules into one JSON response for the API
+│   └── ...                         # templates, static assets, dashboard views              
 ├── script/                         # utility scripts
 ├── smoke_test.py                   # end-to-end smoke test
 ├── architecture.png                # architecture diagram
@@ -157,9 +164,9 @@ This project uses IBM's publicly available **Accounts Receivable — Late Paymen
 
 | Name | Role | Where are we from | About Us |
 |---|---|----|-----|
-| [Kanak Baghel](https://www.linkedin.com/in/kanakbaghel/) | Lead / Organizer | Greater Delhi Area, India |  Data Science & Business Analytics Graduate, Experienced at TechNest & IIT Guwahati (Emeritus) |
+| [Kanak Baghel](https://www.linkedin.com/in/kanakbaghel/) | Lead / Organizer & Backend Development | Greater Delhi Area, India |  Data Science & Business Analytics Graduate, Experienced at TechNest & IIT Guwahati (Emeritus) |
 | [Usman Oluwakemisola Eve](https://www.linkedin.com/in/usman-oluwakemisola-eve/) | Data Analysis & QA | Abuja, Federal Capital Territory, Nigeria | Advanced Business Intelligence(BI) Analyst |
-| [Rahma Shahbaz](https://www.linkedin.com/in/rahma-shahbaz-660841378/) | Web Development | Sahiwal, Punjab, Pakistan | Aspiring AI & Frontend Developer and Azure AI Fundamentals Certified |
+| [Rahma Shahbaz](https://www.linkedin.com/in/rahma-shahbaz-660841378/) | Frontend Development | Sahiwal, Punjab, Pakistan | Aspiring AI & Frontend Developer and Azure AI Fundamentals Certified |
 | [Nana Bonsu](https://www.linkedin.com/in/nana-bonsu/) | AWS & Agent Architecture | Bronx, New York, United States | Software Engineer, Building AI-Powered Mobile & Web Applications |
 ---
 
