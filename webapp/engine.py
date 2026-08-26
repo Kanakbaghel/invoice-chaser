@@ -14,7 +14,7 @@ import pandas as pd
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from data_loader import reminder_tier, cash_flow_projection
-from client_risk import client_risk_summary
+from client_risk import client_risk_summary, compute_concentration_risk
 from forecast import project_cash_flow
 from weekly_brief import build_action_plan
 from decision_explainer import explain_tier, explain_risk, explain_priority
@@ -58,6 +58,17 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
                 "why": explain_risk(float(r["avg_days_late"]), r["risk_level"], int(r["num_invoices"])),
             }
 
+        concentration_df = compute_concentration_risk(open_df) if not open_df.empty else pd.DataFrame()
+    concentration_records = [
+        {
+            "customer": row["customerID"],
+            "outstanding_amount": round(float(row["InvoiceAmount"]), 2),
+            "pct_of_total_ar": float(row["pct_of_total_ar"]),
+            "concentration_flag": row["concentration_flag"],
+        }
+        for _, row in concentration_df.iterrows()
+    ] if not concentration_df.empty else []
+
     action_plan_df = build_action_plan(overdue, risk_df) if not overdue.empty else overdue
     max_amount = float(overdue["InvoiceAmount"].max()) if not overdue.empty else 0.0
     action_plan_records = [
@@ -87,7 +98,7 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
         "worst": [round(float(v), 2) for v in cum["Worst case"]],
     } if not cum.empty else {"dates": [], "best": [], "worst": []}
 
-    return {
+       return {
         "summary": {
             "open_invoices": summary["num_open_invoices"],
             "overdue_invoices": summary["num_overdue_invoices"],
@@ -96,8 +107,10 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
         },
         "overdue": overdue_records,
         "risk": risk_map,
+        "concentration": concentration_records,
         "action_plan": action_plan_records,
         "forecast": forecast,
         "impact": impact,
         "as_of": as_of_ts.strftime("%Y-%m-%d"),
     }
+        
