@@ -58,7 +58,7 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
                 "why": explain_risk(float(r["avg_days_late"]), r["risk_level"], int(r["num_invoices"])),
             }
 
-        concentration_df = compute_concentration_risk(open_df) if not open_df.empty else pd.DataFrame()
+    concentration_df = compute_concentration_risk(open_df) if not open_df.empty else pd.DataFrame()
     concentration_records = [
         {
             "customer": row["customerID"],
@@ -98,7 +98,7 @@ def bundle_from_open_df(open_df: pd.DataFrame, as_of_ts: pd.Timestamp, risk_df: 
         "worst": [round(float(v), 2) for v in cum["Worst case"]],
     } if not cum.empty else {"dates": [], "best": [], "worst": []}
 
-       return {
+    return {
         "summary": {
             "open_invoices": summary["num_open_invoices"],
             "overdue_invoices": summary["num_overdue_invoices"],
