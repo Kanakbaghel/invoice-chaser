@@ -84,6 +84,6 @@ def compute_concentration_risk(open_df: pd.DataFrame) -> pd.DataFrame:
     by_customer = open_df.groupby("customerID")["InvoiceAmount"].sum().reset_index()
     by_customer["pct_of_total_ar"] = (by_customer["InvoiceAmount"] / total_outstanding * 100).round(1)
     by_customer["concentration_flag"] = by_customer["pct_of_total_ar"].apply(
-        lambda pct: "High" if pct >= 25 else ("Medium" if pct >= 10 else "Low")
+        lambda pct: "High" if pct >= 30 else ("Medium" if pct >= 10 else "Low")
     )
     return by_customer.sort_values("pct_of_total_ar", ascending=False)
