@@ -74,3 +74,16 @@ def client_risk_summary(risk_row: pd.Series) -> str:
             f"Chronically late — {risk_row['num_invoices']} past invoices, "
             f"averages {risk_row['avg_days_late']:.0f} days late. Consider requiring a deposit upfront next time."
         )
+
+def compute_concentration_risk(open_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    For each customer, what % of TOTAL outstanding AR do they represent?
+    High concentration = if this one client goes bad, it hurts a lot.
+    """
+    total_outstanding = open_df["InvoiceAmount"].sum()
+    by_customer = open_df.groupby("customerID")["InvoiceAmount"].sum().reset_index()
+    by_customer["pct_of_total_ar"] = (by_customer["InvoiceAmount"] / total_outstanding * 100).round(1)
+    by_customer["concentration_flag"] = by_customer["pct_of_total_ar"].apply(
+        lambda pct: "High" if pct >= 25 else ("Medium" if pct >= 10 else "Low")
+    )
+    return by_customer.sort_values("pct_of_total_ar", ascending=False)
