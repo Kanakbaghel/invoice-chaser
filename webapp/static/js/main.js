@@ -2,6 +2,8 @@
 let bundle = null;
 let uploadToken = null;
 let activeTiers = new Set(["gentle", "polite_followup", "firm", "urgent"]);
+let currentLanguage = "en";
+let targetDateManuallySet = false;
 let tierChart = null;
 let forecastChart = null;
 let tierThresholdChart = null;
@@ -16,8 +18,24 @@ document.addEventListener("DOMContentLoaded", () => {
   buildTierChips();
   attachListeners();
   renderMethodologyCharts();
+  loadLanguages();
   loadSample();
 });
+
+async function loadLanguages() {
+  try {
+    const res = await fetch("/api/languages");
+    if (!res.ok) return;
+    const languages = await res.json();
+    const sel = document.getElementById("language-select");
+    sel.innerHTML = Object.entries(languages)
+      .map(([code, label]) => `<option value="${code}">${label}</option>`)
+      .join("");
+    sel.value = currentLanguage;
+  } catch (err) {
+    // Keep the English-only fallback already in the markup.
+  }
+}
 
 // ---------------- Theme (dark / light) ----------------
 function initTheme() {
@@ -90,8 +108,13 @@ function buildTierChips() {
     chip.textContent = TIER_LABELS[tier];
     chip.dataset.tier = tier;
     chip.onclick = () => {
-      if (activeTiers.has(tier)) { activeTiers.delete(tier); chip.classList.remove("active"); }
-      else { activeTiers.add(tier); chip.classList.add("active"); }
+      if (activeTiers.has(tier)) {
+        activeTiers.delete(tier);
+        chip.classList.remove("active");
+      } else {
+        activeTiers.add(tier);
+        chip.classList.add("active");
+      }
       applyFilters();
     };
     container.appendChild(chip);
@@ -111,14 +134,34 @@ function attachListeners() {
   document.getElementById("amount-max").oninput = applyFilters;
 
   document.getElementById("horizon-slider").oninput = (e) => {
-    document.getElementById("horizon-value").textContent = `${e.target.value} days`;
+    const horizon = parseInt(e.target.value, 10);
+    document.getElementById("horizon-value").textContent = `${horizon} days`;
+
+    if (bundle && !targetDateManuallySet) {
+      const asOf = new Date(bundle.as_of);
+      const synced = new Date(asOf);
+      synced.setDate(synced.getDate() + horizon);
+      document.getElementById("target-date").value = synced.toISOString().slice(0, 10);
+    }
+
     renderForecastChart();
     updateForecastResult();
   };
-  document.getElementById("target-date").onchange = updateForecastResult;
+
+  document.getElementById("target-date").onchange = () => {
+    targetDateManuallySet = true;
+    updateForecastResult();
+  };
+
   document.getElementById("target-amount").oninput = updateForecastResult;
 
   document.getElementById("invoice-select").onchange = onInvoiceSelect;
+
+  document.getElementById("language-select").onchange = (e) => {
+    currentLanguage = e.target.value;
+    refreshReminder();
+  };
+
   document.getElementById("installments-slider").oninput = (e) => {
     document.getElementById("installments-value").textContent = e.target.value;
     fetchPaymentPlan();
@@ -130,6 +173,7 @@ function switchSource(mode) {
   document.getElementById("btn-upload").classList.toggle("active", mode === "upload");
   document.getElementById("sample-controls").style.display = mode === "sample" ? "block" : "none";
   document.getElementById("upload-controls").style.display = mode === "upload" ? "block" : "none";
+
   if (mode === "sample") loadSample();
 }
 
@@ -172,25 +216,40 @@ function setStatsLoading(isLoading) {
   ["stat-open", "stat-overdue", "stat-outstanding", "stat-overdue-amount"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
+
     el.classList.toggle("is-loading", isLoading);
-    if (isLoading) el.textContent = "0000";
+
+    if (isLoading) {
+      el.textContent = "0000";
+    }
   });
 }
 
 // ---------------- Data loading ----------------
 async function loadSample() {
   const snapshot = document.getElementById("snapshot-date").value || "2013-03-01";
+
   setStatsLoading(true);
   showBanner("loading", "Analyzing invoices…");
+
   try {
     const res = await fetch(`/api/sample?snapshot=${snapshot}`);
-    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+    if (!res.ok) {
+      throw new Error(`Server responded with ${res.status}`);
+    }
+
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
     clearBanner();
     setBundle(data);
   } catch (err) {
     setStatsLoading(false);
+
     showBanner(
       "error",
       `Couldn't load the sample ledger. ${err.message || "The server didn't respond."}`,
@@ -202,22 +261,40 @@ async function loadSample() {
 async function handleFileSelect(e) {
   const file = e.target.files[0];
   if (!file) return;
+
   document.getElementById("file-drop-label").textContent = file.name;
 
   const formData = new FormData();
   formData.append("file", file);
-  const res = await fetch("/api/upload/columns", { method: "POST", body: formData });
+
+  const res = await fetch("/api/upload/columns", {
+    method: "POST",
+    body: formData,
+  });
+
   const data = await res.json();
-  if (data.error) { alert(data.error); return; }
+
+  if (data.error) {
+    alert(data.error);
+    return;
+  }
 
   uploadToken = data.token;
+
   ["map-customer", "map-amount", "map-id", "map-due"].forEach((id) => {
     const sel = document.getElementById(id);
-    sel.innerHTML = data.columns.map((c) => `<option value="${c}">${c}</option>`).join("");
+    sel.innerHTML = data.columns
+      .map((c) => `<option value="${c}">${c}</option>`)
+      .join("");
   });
+
   const paidSel = document.getElementById("map-paid");
-  paidSel.innerHTML = `<option value="">(none — assume all unpaid)</option>` +
-    data.columns.map((c) => `<option value="${c}">${c}</option>`).join("");
+
+  paidSel.innerHTML =
+    `<option value="">(none — assume all unpaid)</option>` +
+    data.columns
+      .map((c) => `<option value="${c}">${c}</option>`)
+      .join("");
 
   document.getElementById("mapping-container").style.display = "block";
 }
@@ -237,60 +314,109 @@ async function computeUpload() {
 
   try {
     const res = await fetch("/api/upload/compute", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+    if (!res.ok) {
+      throw new Error(`Server responded with ${res.status}`);
+    }
+
     const data = await res.json();
-    if (data.error) throw new Error(data.error);
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
     clearBanner();
     setBundle(data);
   } catch (err) {
     setStatsLoading(false);
-    showBanner("error", `Couldn't analyze that file. ${err.message || "The server didn't respond."}`, computeUpload);
+
+    showBanner(
+      "error",
+      `Couldn't analyze that file. ${err.message || "The server didn't respond."}`,
+      computeUpload
+    );
   }
 }
 
 // ---------------- Rendering ----------------
 function setBundle(data) {
   bundle = data;
+
   renderStats(data.summary);
   applyFilters();
   renderActionPlan(data.action_plan);
   populateInvoiceSelect(data.overdue);
 
   const asOf = new Date(data.as_of);
-  const targetDefault = new Date(asOf); targetDefault.setDate(targetDefault.getDate() + 30);
-  document.getElementById("target-date").value = targetDefault.toISOString().slice(0, 10);
+  const horizon = parseInt(document.getElementById("horizon-slider").value, 10);
+
+  const targetDefault = new Date(asOf);
+  targetDefault.setDate(targetDefault.getDate() + horizon);
+
+  document.getElementById("target-date").value =
+    targetDefault.toISOString().slice(0, 10);
+
+  targetDateManuallySet = false;
 
   renderForecastChart();
   updateForecastResult();
 
   const summaryEl = document.getElementById("agent-summary");
-  if (summaryEl && data.impact) summaryEl.textContent = data.impact.summary_text;
 
-  document.getElementById("reminder-output").textContent = "Select an invoice above to draft a reminder.";
+  if (summaryEl && data.impact) {
+    summaryEl.textContent = data.impact.summary_text;
+  }
+
+  document.getElementById("reminder-output").textContent =
+    "Select an invoice above to draft a reminder.";
+
   document.getElementById("payment-plan-section").style.display = "none";
   document.getElementById("decision-explainer").style.display = "none";
 }
 
 function renderStats(s) {
-  document.getElementById("stat-open").textContent = s.open_invoices;
-  document.getElementById("stat-overdue").textContent = s.overdue_invoices;
-  document.getElementById("stat-outstanding").textContent = `₹${s.total_outstanding.toFixed(2)}`;
-  document.getElementById("stat-overdue-amount").textContent = `₹${s.overdue_amount.toFixed(2)}`;
+  const totalOutstanding = Number(s.total_outstanding) || 0;
+  const overdueAmount = Number(s.overdue_amount) || 0;
+
+  const statElements = {
+    "stat-open": s.open_invoices ?? 0,
+    "stat-overdue": s.overdue_invoices ?? 0,
+    "stat-outstanding": `₹${totalOutstanding.toFixed(2)}`,
+    "stat-overdue-amount": `₹${overdueAmount.toFixed(2)}`,
+  };
+
+  Object.entries(statElements).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+
+    if (!el) return;
+
+    // REQUIRED FIX:
+    // Remove the loading/skeleton state once the real value is available.
+    el.classList.remove("is-loading");
+
+    // Display the actual value.
+    el.textContent = value;
+  });
 }
 
 function applyFilters() {
   if (!bundle) return;
+
   const search = document.getElementById("search-input").value.toLowerCase();
   const min = parseFloat(document.getElementById("amount-min").value) || 0;
+
   const maxRaw = document.getElementById("amount-max").value;
   const max = maxRaw ? parseFloat(maxRaw) : Infinity;
 
   const filtered = bundle.overdue.filter((row) =>
     row.customer.toLowerCase().includes(search) &&
     activeTiers.has(row.tier) &&
-    row.amount >= min && row.amount <= max
+    row.amount >= min &&
+    row.amount <= max
   );
 
   renderTable(filtered);
@@ -299,11 +425,15 @@ function applyFilters() {
 
 function renderTable(rows) {
   const tbody = document.getElementById("invoice-table-body");
+
   tbody.innerHTML = "";
-  document.getElementById("table-empty").style.display = rows.length ? "none" : "block";
+
+  document.getElementById("table-empty").style.display =
+    rows.length ? "none" : "block";
 
   rows.forEach((row) => {
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
       <td>${row.customer}</td>
       <td>${row.invoice_number}</td>
@@ -312,34 +442,87 @@ function renderTable(rows) {
       <td>${row.days_overdue}</td>
       <td><span class="tier-badge ${row.tier}">${TIER_LABELS[row.tier]}</span></td>
     `;
+
     tbody.appendChild(tr);
   });
 }
 
 function renderTierChart(rows) {
-  const totals = { gentle: 0, polite_followup: 0, firm: 0, urgent: 0 };
-  rows.forEach((r) => { totals[r.tier] += r.amount; });
+  const totals = {
+    gentle: 0,
+    polite_followup: 0,
+    firm: 0,
+    urgent: 0,
+  };
+
+  rows.forEach((r) => {
+    totals[r.tier] += r.amount;
+  });
 
   const ctx = document.getElementById("tier-chart");
+
   const dataValues = Object.keys(TIER_LABELS).map((t) => totals[t]);
-  const colors = ["#2dd4bf", "#fbbf24", "#fb7185", "#ef4444"];
+
+  const colors = [
+    "#2dd4bf",
+    "#fbbf24",
+    "#fb7185",
+    "#ef4444",
+  ];
+
   const chartColors = getChartColors();
 
-  if (tierChart) tierChart.destroy();
+  if (tierChart) {
+    tierChart.destroy();
+  }
+
   tierChart = new Chart(ctx, {
     type: "bar",
+
     data: {
       labels: Object.values(TIER_LABELS),
-      datasets: [{ data: dataValues, backgroundColor: colors, borderRadius: 4 }],
+
+      datasets: [
+        {
+          data: dataValues,
+          backgroundColor: colors,
+          borderRadius: 4,
+        },
+      ],
     },
+
     options: {
       plugins: {
-        legend: { display: false },
-        title: { display: true, text: "By urgency (₹)", color: chartColors.text },
+        legend: {
+          display: false,
+        },
+
+        title: {
+          display: true,
+          text: "By urgency (₹)",
+          color: chartColors.text,
+        },
       },
+
       scales: {
-        x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
-        y: { beginAtZero: true, ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+        x: {
+          ticks: {
+            color: chartColors.text,
+          },
+          grid: {
+            color: chartColors.grid,
+          },
+        },
+
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: chartColors.text,
+          },
+          grid: {
+            color: chartColors.grid,
+          },
+        },
       },
     },
   });
@@ -347,53 +530,121 @@ function renderTierChart(rows) {
 
 function renderActionPlan(list) {
   const container = document.getElementById("action-plan-list");
+
   container.innerHTML = "";
+
   if (!list.length) {
-    container.innerHTML = `<div class="empty-state">No overdue invoices — nothing to chase!</div>`;
+    container.innerHTML =
+      `<div class="empty-state">No overdue invoices — nothing to chase!</div>`;
     return;
   }
+
   list.slice(0, 10).forEach((item, i) => {
     const row = document.createElement("div");
+
     row.className = "action-row";
+
     row.innerHTML = `
       <span class="priority">#${i + 1}</span>
       <span>${item.customer} — ₹${item.amount.toFixed(2)} (${item.days_overdue}d late)</span>
       <span><strong>${item.recommended_action}</strong></span>
     `;
+
     container.appendChild(row);
   });
 }
 
 function renderForecastChart() {
   if (!bundle) return;
-  const horizon = parseInt(document.getElementById("horizon-slider").value, 10);
-  const asOf = new Date(bundle.as_of);
-  const cutoff = new Date(asOf); cutoff.setDate(cutoff.getDate() + horizon);
 
-  const dates = [], best = [], worst = [];
+  const horizon = parseInt(
+    document.getElementById("horizon-slider").value,
+    10
+  );
+
+  const asOf = new Date(bundle.as_of);
+
+  const cutoff = new Date(asOf);
+  cutoff.setDate(cutoff.getDate() + horizon);
+
+  const dates = [];
+  const best = [];
+  const worst = [];
+
   bundle.forecast.dates.forEach((d, i) => {
     if (new Date(d) <= cutoff) {
-      dates.push(d); best.push(bundle.forecast.best[i]); worst.push(bundle.forecast.worst[i]);
+      dates.push(d);
+      best.push(bundle.forecast.best[i]);
+      worst.push(bundle.forecast.worst[i]);
     }
   });
 
   const ctx = document.getElementById("forecast-chart");
+
   const chartColors = getChartColors();
-  if (forecastChart) forecastChart.destroy();
+
+  if (forecastChart) {
+    forecastChart.destroy();
+  }
+
   forecastChart = new Chart(ctx, {
     type: "line",
+
     data: {
       labels: dates,
+
       datasets: [
-        { label: "Best case", data: best, borderColor: "#2dd4bf", backgroundColor: "rgba(45,212,191,0.12)", tension: 0.2, fill: true },
-        { label: "Worst case", data: worst, borderColor: "#fb7185", backgroundColor: "rgba(251,113,133,0.10)", tension: 0.2, fill: true },
+        {
+          label: "Best case",
+          data: best,
+          borderColor: "#2dd4bf",
+          backgroundColor: "rgba(45,212,191,0.12)",
+          tension: 0.2,
+          fill: true,
+        },
+
+        {
+          label: "Worst case",
+          data: worst,
+          borderColor: "#fb7185",
+          backgroundColor: "rgba(251,113,133,0.10)",
+          tension: 0.2,
+          fill: true,
+        },
       ],
     },
+
     options: {
-      plugins: { legend: { position: "bottom", labels: { color: chartColors.text } } },
+      plugins: {
+        legend: {
+          position: "bottom",
+
+          labels: {
+            color: chartColors.text,
+          },
+        },
+      },
+
       scales: {
-        x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
-        y: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
+        x: {
+          ticks: {
+            color: chartColors.text,
+          },
+
+          grid: {
+            color: chartColors.grid,
+          },
+        },
+
+        y: {
+          ticks: {
+            color: chartColors.text,
+          },
+
+          grid: {
+            color: chartColors.grid,
+          },
+        },
       },
     },
   });
@@ -401,74 +652,157 @@ function renderForecastChart() {
 
 function updateForecastResult() {
   if (!bundle || !bundle.forecast.dates.length) {
-    document.getElementById("forecast-result").textContent = "Not enough data to forecast yet.";
+    document.getElementById("forecast-result").textContent =
+      "Not enough data to forecast yet.";
     return;
   }
-  const targetDate = new Date(document.getElementById("target-date").value);
-  const targetAmount = parseFloat(document.getElementById("target-amount").value) || 0;
 
-  let bestVal = 0, worstVal = 0;
+  const targetDate = new Date(
+    document.getElementById("target-date").value
+  );
+
+  const targetAmount =
+    parseFloat(document.getElementById("target-amount").value) || 0;
+
+  let bestVal = 0;
+  let worstVal = 0;
+
   bundle.forecast.dates.forEach((d, i) => {
-    if (new Date(d) <= targetDate) { bestVal = bundle.forecast.best[i]; worstVal = bundle.forecast.worst[i]; }
+    if (new Date(d) <= targetDate) {
+      bestVal = bundle.forecast.best[i];
+      worstVal = bundle.forecast.worst[i];
+    }
   });
 
-  let msg = `Best case by then: ₹${bestVal.toFixed(2)} · Worst case: ₹${worstVal.toFixed(2)}`;
+  let msg =
+    `Best case by then: ₹${bestVal.toFixed(2)} · Worst case: ₹${worstVal.toFixed(2)}`;
+
   if (targetAmount > 0) {
-    if (worstVal >= targetAmount) msg += " — Even worst case, you're covered. ✅";
-    else if (bestVal >= targetAmount) msg += " — Covered if clients pay roughly on time, not guaranteed. ⚠️";
-    else msg += " — You may fall short of this amount by then. 🔴";
+    if (worstVal >= targetAmount) {
+      msg += " — Even worst case, you're covered. ✅";
+    } else if (bestVal >= targetAmount) {
+      msg +=
+        " — Covered if clients pay roughly on time, not guaranteed. ⚠️";
+    } else {
+      msg += " — You may fall short of this amount by then. 🔴";
+    }
   }
+
   document.getElementById("forecast-result").textContent = msg;
 }
 
 function populateInvoiceSelect(rows) {
   const sel = document.getElementById("invoice-select");
-  sel.innerHTML = `<option value="">— choose an invoice —</option>` +
-    rows.map((r) => `<option value="${r.invoice_number}">${r.invoice_number} — ${r.customer} (₹${r.amount.toFixed(2)})</option>`).join("");
+
+  sel.innerHTML =
+    `<option value="">— choose an invoice —</option>` +
+    rows
+      .map(
+        (r) =>
+          `<option value="${r.invoice_number}">${r.invoice_number} — ${r.customer} (₹${r.amount.toFixed(2)})</option>`
+      )
+      .join("");
 }
 
-async function onInvoiceSelect() {
-  const invoiceNumber = document.getElementById("invoice-select").value;
-  if (!invoiceNumber) return;
-  const row = bundle.overdue.find((r) => r.invoice_number === invoiceNumber);
+async function refreshReminder() {
+  const invoiceNumber =
+    document.getElementById("invoice-select").value;
+
+  if (!invoiceNumber || !bundle) return;
+
+  const row = bundle.overdue.find(
+    (r) => r.invoice_number === invoiceNumber
+  );
+
   if (!row) return;
 
   const res = await fetch("/api/reminder", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(row),
-  });
-  const data = await res.json();
-  document.getElementById("reminder-output").textContent = data.message;
+    method: "POST",
 
-  const riskContainer = document.getElementById("risk-badge-container");
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      ...row,
+      language: currentLanguage,
+    }),
+  });
+
+  const data = await res.json();
+
+  document.getElementById("reminder-output").textContent =
+    data.message;
+}
+
+async function onInvoiceSelect() {
+  const invoiceNumber =
+    document.getElementById("invoice-select").value;
+
+  if (!invoiceNumber) return;
+
+  const row = bundle.overdue.find(
+    (r) => r.invoice_number === invoiceNumber
+  );
+
+  if (!row) return;
+
+  await refreshReminder();
+
+  const riskContainer =
+    document.getElementById("risk-badge-container");
+
   const risk = bundle.risk[row.customer];
+
   if (risk) {
-    riskContainer.innerHTML = `<div class="risk-badge"><span class="risk-dot ${risk.risk_level}"></span> ${risk.risk_level} risk — ${risk.summary}</div>`;
+    riskContainer.innerHTML = `
+      <div class="risk-badge">
+        <span class="risk-dot ${risk.risk_level}"></span>
+        ${risk.risk_level} risk — ${risk.summary}
+      </div>
+    `;
   } else {
     riskContainer.innerHTML = "";
   }
 
   // ---- Decision Explainer: show the "why" behind tone, risk, and rank ----
-  document.getElementById("decision-explainer").style.display = "block";
-  document.getElementById("explain-tier").textContent = row.why;
+  document.getElementById("decision-explainer").style.display =
+    "block";
 
-  const riskRow = document.getElementById("explain-risk-row");
+  document.getElementById("explain-tier").textContent =
+    row.why;
+
+  const riskRow =
+    document.getElementById("explain-risk-row");
+
   if (risk) {
-    document.getElementById("explain-risk").textContent = risk.why;
+    document.getElementById("explain-risk").textContent =
+      risk.why;
+
     riskRow.style.display = "flex";
   } else {
     riskRow.style.display = "none";
   }
 
-  const priorityRow = document.getElementById("explain-priority-row");
-  const planItem = bundle.action_plan.find((p) => p.invoice_number === invoiceNumber);
+  const priorityRow =
+    document.getElementById("explain-priority-row");
+
+  const planItem = bundle.action_plan.find(
+    (p) => p.invoice_number === invoiceNumber
+  );
+
   if (planItem) {
-    document.getElementById("explain-priority").textContent = planItem.why;
+    document.getElementById("explain-priority").textContent =
+      planItem.why;
+
     priorityRow.style.display = "flex";
   } else {
     priorityRow.style.display = "none";
   }
 
-  const planSection = document.getElementById("payment-plan-section");
+  const planSection =
+    document.getElementById("payment-plan-section");
+
   if (row.tier === "firm" || row.tier === "urgent") {
     planSection.style.display = "block";
     fetchPaymentPlan();
@@ -484,95 +818,257 @@ async function onInvoiceSelect() {
 // again whenever the theme changes.
 function renderMethodologyCharts() {
   if (typeof Chart === "undefined") return;
+
   const chartColors = getChartColors();
+
   const commonScales = {
-    x: { ticks: { color: chartColors.text }, grid: { color: chartColors.grid } },
-    y: { ticks: { color: chartColors.text }, grid: { display: false } },
+    x: {
+      ticks: {
+        color: chartColors.text,
+      },
+
+      grid: {
+        color: chartColors.grid,
+      },
+    },
+
+    y: {
+      ticks: {
+        color: chartColors.text,
+      },
+
+      grid: {
+        display: false,
+      },
+    },
   };
 
-  const tierCtx = document.getElementById("chart-tier-thresholds");
+  const tierCtx =
+    document.getElementById("chart-tier-thresholds");
+
   if (tierCtx) {
-    if (tierThresholdChart) tierThresholdChart.destroy();
+    if (tierThresholdChart) {
+      tierThresholdChart.destroy();
+    }
+
     tierThresholdChart = new Chart(tierCtx, {
       type: "bar",
-      data: {
-        labels: ["Gentle", "Follow-up", "Firm", "Urgent"],
-        datasets: [{
-          data: [[0, 5], [6, 13], [14, 25], [26, 40]],
-          backgroundColor: ["#4ade80", "#fbbf24", "#fb7185", "#ef4444"],
-          borderRadius: 4,
-        }],
-      },
-      options: {
-        indexAxis: "y",
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ...commonScales.x, title: { display: true, text: "Days overdue", color: chartColors.text } },
-          y: commonScales.y,
-        },
-      },
-    });
-  }
 
-  const riskCtx = document.getElementById("chart-risk-thresholds");
-  if (riskCtx) {
-    if (riskThresholdChart) riskThresholdChart.destroy();
-    riskThresholdChart = new Chart(riskCtx, {
-      type: "bar",
       data: {
-        labels: ["Low", "Medium", "High"],
-        datasets: [{
-          data: [[0, 2], [2, 10], [10, 20]],
-          backgroundColor: ["#4ade80", "#fbbf24", "#ef4444"],
-          borderRadius: 4,
-        }],
-      },
-      options: {
-        indexAxis: "y",
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ...commonScales.x, title: { display: true, text: "Avg. days late (High is 10+)", color: chartColors.text } },
-          y: commonScales.y,
-        },
-      },
-    });
-  }
+        labels: [
+          "Gentle",
+          "Follow-up",
+          "Firm",
+          "Urgent",
+        ],
 
-  const priorityCtx = document.getElementById("chart-priority-weights");
-  if (priorityCtx) {
-    if (priorityWeightChart) priorityWeightChart.destroy();
-    priorityWeightChart = new Chart(priorityCtx, {
-      type: "bar",
-      data: {
-        labels: ["Max points (of 10)"],
         datasets: [
-          { label: "Amount", data: [3], backgroundColor: "#60a5fa" },
-          { label: "Urgency", data: [4], backgroundColor: "#fb7185" },
-          { label: "Client risk", data: [3], backgroundColor: "#fbbf24" },
+          {
+            data: [
+              [0, 5],
+              [6, 13],
+              [14, 25],
+              [26, 40],
+            ],
+
+            backgroundColor: [
+              "#4ade80",
+              "#fbbf24",
+              "#fb7185",
+              "#ef4444",
+            ],
+
+            borderRadius: 4,
+          },
         ],
       },
+
       options: {
         indexAxis: "y",
-        scales: {
-          x: { ...commonScales.x, stacked: true, max: 10 },
-          y: { ...commonScales.y, stacked: true },
+
+        plugins: {
+          legend: {
+            display: false,
+          },
         },
-        plugins: { legend: { position: "bottom", labels: { color: chartColors.text } } },
+
+        scales: {
+          x: {
+            ...commonScales.x,
+
+            title: {
+              display: true,
+              text: "Days overdue",
+              color: chartColors.text,
+            },
+          },
+
+          y: commonScales.y,
+        },
+      },
+    });
+  }
+
+  const riskCtx =
+    document.getElementById("chart-risk-thresholds");
+
+  if (riskCtx) {
+    if (riskThresholdChart) {
+      riskThresholdChart.destroy();
+    }
+
+    riskThresholdChart = new Chart(riskCtx, {
+      type: "bar",
+
+      data: {
+        labels: [
+          "Low",
+          "Medium",
+          "High",
+        ],
+
+        datasets: [
+          {
+            data: [
+              [0, 2],
+              [2, 10],
+              [10, 20],
+            ],
+
+            backgroundColor: [
+              "#4ade80",
+              "#fbbf24",
+              "#ef4444",
+            ],
+
+            borderRadius: 4,
+          },
+        ],
+      },
+
+      options: {
+        indexAxis: "y",
+
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },
+
+        scales: {
+          x: {
+            ...commonScales.x,
+
+            title: {
+              display: true,
+              text: "Avg. days late (High is 10+)",
+              color: chartColors.text,
+            },
+          },
+
+          y: commonScales.y,
+        },
+      },
+    });
+  }
+
+  const priorityCtx =
+    document.getElementById("chart-priority-weights");
+
+  if (priorityCtx) {
+    if (priorityWeightChart) {
+      priorityWeightChart.destroy();
+    }
+
+    priorityWeightChart = new Chart(priorityCtx, {
+      type: "bar",
+
+      data: {
+        labels: [
+          "Max points (of 10)",
+        ],
+
+        datasets: [
+          {
+            label: "Amount",
+            data: [3],
+            backgroundColor: "#60a5fa",
+          },
+
+          {
+            label: "Urgency",
+            data: [4],
+            backgroundColor: "#fb7185",
+          },
+
+          {
+            label: "Client risk",
+            data: [3],
+            backgroundColor: "#fbbf24",
+          },
+        ],
+      },
+
+      options: {
+        indexAxis: "y",
+
+        scales: {
+          x: {
+            ...commonScales.x,
+            stacked: true,
+            max: 10,
+          },
+
+          y: {
+            ...commonScales.y,
+            stacked: true,
+          },
+        },
+
+        plugins: {
+          legend: {
+            position: "bottom",
+
+            labels: {
+              color: chartColors.text,
+            },
+          },
+        },
       },
     });
   }
 }
 
 async function fetchPaymentPlan() {
-  const invoiceNumber = document.getElementById("invoice-select").value;
-  const row = bundle.overdue.find((r) => r.invoice_number === invoiceNumber);
+  const invoiceNumber =
+    document.getElementById("invoice-select").value;
+
+  const row = bundle.overdue.find(
+    (r) => r.invoice_number === invoiceNumber
+  );
+
   if (!row) return;
-  const installments = parseInt(document.getElementById("installments-slider").value, 10);
+
+  const installments = parseInt(
+    document.getElementById("installments-slider").value,
+    10
+  );
 
   const res = await fetch("/api/payment-plan", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...row, num_installments: installments }),
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      ...row,
+      num_installments: installments,
+    }),
   });
+
   const data = await res.json();
-  document.getElementById("payment-plan-output").textContent = data.message;
+
+  document.getElementById("payment-plan-output").textContent =
+    data.message;
 }
