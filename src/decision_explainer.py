@@ -8,10 +8,10 @@ client_risk.py / weekly_brief.py, in words.
 """
 
 TIER_RANGES = {
-    "gentle": "1–7 days overdue",
-    "polite_followup": "8–21 days overdue",
-    "firm": "22–45 days overdue",
-    "urgent": "46+ days overdue",
+    "gentle": "1–5 days overdue",
+    "polite_followup": "6–13 days overdue",
+    "firm": "14–25 days overdue",
+    "urgent": "26+ days overdue",
 }
 
 RISK_CUTOFFS_TEXT = "≤2 days late on average = Low, ≤10 days = Medium, above that = High"
