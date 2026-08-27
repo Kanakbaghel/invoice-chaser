@@ -2265,3 +2265,197 @@ input[type="range"] {
     animation: none !important;
   }
 }
+
+/* =========================================================
+   CUSTOMER CONCENTRATION RISK
+========================================================= */
+
+.concentration-card {
+  overflow: hidden;
+}
+
+.concentration-explanation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.concentration-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.concentration-info-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.concentration-info strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.concentration-info p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.concentration-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.concentration-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.concentration-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.concentration-dot.low {
+  background: #4ade80;
+}
+
+.concentration-dot.medium {
+  background: #fbbf24;
+}
+
+.concentration-dot.high {
+  background: #ef4444;
+}
+
+.concentration-table-header {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 100px;
+  gap: 20px;
+  padding: 10px 14px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.concentration-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.concentration-row {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 100px;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.concentration-customer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.concentration-customer strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.concentration-customer span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.concentration-bar-wrapper {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.concentration-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--border);
+}
+
+.concentration-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+}
+
+.concentration-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.concentration-badge.low {
+  color: #16a34a;
+  background: rgba(74, 222, 128, .12);
+}
+
+.concentration-badge.medium {
+  color: #d97706;
+  background: rgba(251, 191, 36, .12);
+}
+
+.concentration-badge.high {
+  color: #dc2626;
+  background: rgba(239, 68, 68, .12);
+}
+
+@media (max-width: 800px) {
+
+  .concentration-explanation {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .concentration-table-header {
+    display: none;
+  }
+
+  .concentration-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .concentration-bar-wrapper {
+    width: 100%;
+  }
+
+  .concentration-badge {
+    width: fit-content;
+  }
+}

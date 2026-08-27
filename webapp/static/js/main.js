@@ -349,6 +349,7 @@ function setBundle(data) {
   renderStats(data.summary);
   applyFilters();
   renderActionPlan(data.action_plan);
+  renderConcentration(data.concentration);
   populateInvoiceSelect(data.overdue);
 
   const asOf = new Date(data.as_of);
@@ -548,6 +549,46 @@ function renderActionPlan(list) {
       <span class="priority">#${i + 1}</span>
       <span>${item.customer} — ₹${item.amount.toFixed(2)} (${item.days_overdue}d late)</span>
       <span><strong>${item.recommended_action}</strong></span>
+    `;
+
+    container.appendChild(row);
+  });
+}
+
+function renderConcentration(list) {
+  const container = document.getElementById("concentration-list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!list || !list.length) {
+    container.innerHTML =
+      `<div class="empty-state">No concentration data available.</div>`;
+    return;
+  }
+
+  const FLAG_COLORS = { High: "#ef4444", Medium: "#fbbf24", Low: "#4ade80" };
+
+  list.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "concentration-row";
+
+    const pct = Number(item.pct_of_total_ar) || 0;
+    const flag = item.concentration_flag || "Low";
+    const barColor = FLAG_COLORS[flag] || FLAG_COLORS.Low;
+
+    row.innerHTML = `
+      <div class="concentration-customer">
+        <strong>${item.customer}</strong>
+        <span>₹${Number(item.outstanding_amount).toFixed(2)}</span>
+      </div>
+      <div class="concentration-bar-wrapper">
+        <div class="concentration-bar">
+          <span style="width:${Math.min(pct, 100)}%; color:${barColor}"></span>
+        </div>
+        <span>${pct.toFixed(1)}%</span>
+      </div>
+      <span class="concentration-badge ${flag.toLowerCase()}">${flag}</span>
     `;
 
     container.appendChild(row);

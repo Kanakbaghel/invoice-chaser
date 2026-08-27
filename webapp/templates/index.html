@@ -19,7 +19,6 @@
 
   <link rel="stylesheet" href="/static/css/style.css">
 
-  <!-- Prevents a flash of the wrong theme on load -->
   <script>
     (function () {
       try {
@@ -56,13 +55,26 @@
       aria-label="Switch to light mode"
       aria-pressed="false"
       title="Toggle light / dark theme">
+
       <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
       </svg>
+
       <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/>
-        <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="4.2"
+                stroke="currentColor"
+                stroke-width="1.8"/>
+
+        <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"/>
       </svg>
+
     </button>
   </nav>
 
@@ -110,17 +122,13 @@
     </div>
 
     <div class="hero-meta">
-
       <span>✓ AI-powered follow-ups</span>
       <span>✓ Risk-aware decisions</span>
       <span>✓ Cash-flow forecasting</span>
-
     </div>
 
   </div>
 
-
-  <!-- Hero dashboard visual -->
 
   <div class="hero-dashboard">
 
@@ -327,7 +335,6 @@
 
 <section class="ledger" id="ledger">
 
-  <!-- Loading / error status, populated by main.js -->
   <div id="status-banner-container"></div>
 
 
@@ -382,8 +389,6 @@
     </div>
 
 
-    <!-- Sample controls -->
-
     <div id="sample-controls">
 
       <div class="field-row">
@@ -406,8 +411,6 @@
 
     </div>
 
-
-    <!-- Upload controls -->
 
     <div
       id="upload-controls"
@@ -621,6 +624,53 @@
           Currently at risk
         </div>
 
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =======================================================
+       CUSTOMER CONCENTRATION RISK
+       NEW FEATURE
+  ======================================================== -->
+
+  <div class="ledger-card concentration-card">
+
+    <div class="card-heading">
+
+      <div>
+
+        <span class="section-number">
+          01A
+        </span>
+
+        <h2>
+          Customer concentration risk
+        </h2>
+
+      </div>
+
+      <span class="card-status">
+        Portfolio risk
+      </span>
+
+    </div>
+
+    <p class="caption">
+      See whether too much of your outstanding receivables
+      depend on a single customer.
+    </p>
+
+
+    <div
+      id="concentration-list"
+      class="concentration-list">
+
+      <div class="empty-state">
+        Loading concentration data...
       </div>
 
     </div>
@@ -844,6 +894,7 @@
       <div class="chart-panel">
 
         <div class="chart-title">
+
           <span>
             Urgency breakdown
           </span>
@@ -851,6 +902,7 @@
           <small>
             Amount by tier
           </small>
+
         </div>
 
         <canvas
@@ -964,8 +1016,7 @@
     </canvas>
 
 
-    <div
-      class="forecast-controls">
+    <div class="forecast-controls">
 
       <div class="slider-row">
 
@@ -1096,7 +1147,8 @@
     </div>
 
 
-    <!-- Decision Explainer: plain-English "why" behind the agent's call -->
+    <!-- Decision Explainer -->
+
     <div
       id="decision-explainer"
       class="decision-explainer"
@@ -1109,25 +1161,56 @@
         </div>
 
         <div>
-          <span class="section-kicker">DECISION EXPLAINER</span>
-          <h3>Why the agent chose this</h3>
+
+          <span class="section-kicker">
+            DECISION EXPLAINER
+          </span>
+
+          <h3>
+            Why the agent chose this
+          </h3>
+
         </div>
 
       </div>
 
+
       <div class="explainer-item">
-        <span class="explainer-label">Tone</span>
+
+        <span class="explainer-label">
+          Tone
+        </span>
+
         <p id="explain-tier"></p>
+
       </div>
 
-      <div class="explainer-item" id="explain-risk-row" style="display:none;">
-        <span class="explainer-label">Client risk</span>
+
+      <div
+        class="explainer-item"
+        id="explain-risk-row"
+        style="display:none;">
+
+        <span class="explainer-label">
+          Client risk
+        </span>
+
         <p id="explain-risk"></p>
+
       </div>
 
-      <div class="explainer-item" id="explain-priority-row" style="display:none;">
-        <span class="explainer-label">Priority rank</span>
+
+      <div
+        class="explainer-item"
+        id="explain-priority-row"
+        style="display:none;">
+
+        <span class="explainer-label">
+          Priority rank
+        </span>
+
         <p id="explain-priority"></p>
+
       </div>
 
     </div>
@@ -1136,6 +1219,7 @@
     <div class="ai-output-header">
 
       <div>
+
         <span class="section-kicker">
           AGENT RESPONSE
         </span>
@@ -1143,6 +1227,7 @@
         <h3>
           Personalized follow-up
         </h3>
+
       </div>
 
       <span class="generated-label">
@@ -1244,11 +1329,14 @@
      METHODOLOGY / DATA-DRIVEN DESIGN
 ========================================================= -->
 
-<section class="how-section methodology-section" id="methodology">
+<section
+  class="how-section methodology-section"
+  id="methodology">
 
   <div class="section-heading">
 
     <div>
+
       <span class="section-kicker">
         METHODOLOGY
       </span>
@@ -1257,6 +1345,7 @@
         Data-driven design,
         <span>not vibes.</span>
       </h2>
+
     </div>
 
     <p>
@@ -1273,11 +1362,21 @@
     <div class="methodology-card">
 
       <div class="chart-title">
-        <span>Urgency thresholds</span>
-        <small>Days overdue → tone</small>
+
+        <span>
+          Urgency thresholds
+        </span>
+
+        <small>
+          Days overdue → tone
+        </small>
+
       </div>
 
-      <canvas id="chart-tier-thresholds" height="190"></canvas>
+      <canvas
+        id="chart-tier-thresholds"
+        height="190">
+      </canvas>
 
       <p class="methodology-takeaway">
         Tone escalates at fixed cut-points — 5, 13, and 25 days —
@@ -1290,11 +1389,21 @@
     <div class="methodology-card">
 
       <div class="chart-title">
-        <span>Client risk cutoffs</span>
-        <small>Avg. days late → risk band</small>
+
+        <span>
+          Client risk cutoffs
+        </span>
+
+        <small>
+          Avg. days late → risk band
+        </small>
+
       </div>
 
-      <canvas id="chart-risk-thresholds" height="190"></canvas>
+      <canvas
+        id="chart-risk-thresholds"
+        height="190">
+      </canvas>
 
       <p class="methodology-takeaway">
         A client averaging just 3 days late already tips into
@@ -1307,11 +1416,21 @@
     <div class="methodology-card">
 
       <div class="chart-title">
-        <span>Priority score weighting</span>
-        <small>Max points contributed, of 10</small>
+
+        <span>
+          Priority score weighting
+        </span>
+
+        <small>
+          Max points contributed, of 10
+        </small>
+
       </div>
 
-      <canvas id="chart-priority-weights" height="190"></canvas>
+      <canvas
+        id="chart-priority-weights"
+        height="190">
+      </canvas>
 
       <p class="methodology-takeaway">
         Urgency carries the most weight (4 of 10) — a large invoice
@@ -1333,8 +1452,15 @@
 <footer class="site-footer">
 
   <div class="footer-brand">
-    <span class="mark">IC</span>
-    <strong>Invoice Chaser</strong>
+
+    <span class="mark">
+      IC
+    </span>
+
+    <strong>
+      Invoice Chaser
+    </strong>
+
   </div>
 
   <p>
@@ -1355,6 +1481,7 @@
 
 
 <!-- Small UI helper -->
+
 <script>
 
 function copyReminder() {
@@ -1387,13 +1514,17 @@ function copyReminder() {
         "Copied ✓";
 
       setTimeout(() => {
+
         button.textContent =
           original;
+
       }, 1800);
 
     })
     .catch(() => {
+
       alert("Unable to copy the message.");
+
     });
 
 }
