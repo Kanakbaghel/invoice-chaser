@@ -1112,3 +1112,440 @@
         </span>
 
         <h2>
+          Draft a reminder
+        </h2>
+
+      </div>
+
+      <span class="card-status ai-status">
+        AI generated
+      </span>
+
+    </div>
+
+    <p class="caption">
+      Select an overdue invoice and let the agent decide
+      how the follow-up should sound.
+    </p>
+
+
+    <div class="field-row">
+
+      <div class="field">
+
+        <label for="invoice-select">
+          Pick an overdue invoice
+        </label>
+
+        <select id="invoice-select"></select>
+
+      </div>
+
+
+      <div class="field">
+
+        <label for="language-select">
+          Reminder language
+        </label>
+
+        <select id="language-select">
+          <option value="en">English</option>
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="risk-badge-container"
+      style="margin:18px 0;">
+    </div>
+
+
+    <!-- Decision Explainer -->
+
+    <div
+      id="decision-explainer"
+      class="decision-explainer"
+      style="display:none;">
+
+      <div class="explainer-heading">
+
+        <div class="explainer-icon">
+          ◆
+        </div>
+
+        <div>
+
+          <span class="section-kicker">
+            DECISION EXPLAINER
+          </span>
+
+          <h3>
+            Why the agent chose this
+          </h3>
+
+        </div>
+
+      </div>
+
+
+      <div class="explainer-item">
+
+        <span class="explainer-label">
+          Tone
+        </span>
+
+        <p id="explain-tier"></p>
+
+      </div>
+
+
+      <div
+        class="explainer-item"
+        id="explain-risk-row"
+        style="display:none;">
+
+        <span class="explainer-label">
+          Client risk
+        </span>
+
+        <p id="explain-risk"></p>
+
+      </div>
+
+
+      <div
+        class="explainer-item"
+        id="explain-priority-row"
+        style="display:none;">
+
+        <span class="explainer-label">
+          Priority rank
+        </span>
+
+        <p id="explain-priority"></p>
+
+      </div>
+
+    </div>
+
+
+    <div class="ai-output-header">
+
+      <div>
+
+        <span class="section-kicker">
+          AGENT RESPONSE
+        </span>
+
+        <h3>
+          Personalized follow-up
+        </h3>
+
+      </div>
+
+      <span class="generated-label">
+        AI
+      </span>
+
+    </div>
+
+
+    <div
+      class="slip-output"
+      id="reminder-output">
+
+      Select an invoice above to draft a reminder.
+
+    </div>
+
+
+    <div class="reminder-actions">
+
+      <button
+        class="btn-secondary"
+        type="button"
+        onclick="copyReminder()">
+
+        Copy message
+
+      </button>
+
+    </div>
+
+
+
+    <!-- Payment plan -->
+
+    <div
+      id="payment-plan-section"
+      class="payment-plan-section"
+      style="display:none;">
+
+      <div class="payment-plan-heading">
+
+        <div class="plan-icon">
+          ₹
+        </div>
+
+        <div>
+
+          <h2>
+            Consider a payment plan instead
+          </h2>
+
+          <p class="caption">
+            This invoice is significantly overdue.
+            A flexible plan may be more effective than
+            a blunt demand.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="slider-row">
+
+        <label for="installments-slider">
+          Installments
+        </label>
+
+        <input
+          type="range"
+          id="installments-slider"
+          min="2"
+          max="4"
+          value="3">
+
+        <span id="installments-value">
+          3
+        </span>
+
+      </div>
+
+
+      <div
+        class="slip-output"
+        id="payment-plan-output"
+        style="margin-top:12px;">
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     METHODOLOGY / DATA-DRIVEN DESIGN
+========================================================= -->
+
+<section
+  class="how-section methodology-section"
+  id="methodology">
+
+  <div class="section-heading">
+
+    <div>
+
+      <span class="section-kicker">
+        METHODOLOGY
+      </span>
+
+      <h2>
+        Data-driven design,
+        <span>not vibes.</span>
+      </h2>
+
+    </div>
+
+    <p>
+      Every threshold below is a constant in the code — not a
+      subjective call made per invoice. This is what actually
+      decides tone, risk, and priority.
+    </p>
+
+  </div>
+
+
+  <div class="methodology-grid">
+
+    <div class="methodology-card">
+
+      <div class="chart-title">
+
+        <span>
+          Urgency thresholds
+        </span>
+
+        <small>
+          Days overdue → tone
+        </small>
+
+      </div>
+
+      <canvas
+        id="chart-tier-thresholds"
+        height="190">
+      </canvas>
+
+      <p class="methodology-takeaway">
+        Tone escalates at fixed cut-points — 5, 13, and 25 days —
+        not a subjective judgment call made per invoice.
+      </p>
+
+    </div>
+
+
+    <div class="methodology-card">
+
+      <div class="chart-title">
+
+        <span>
+          Client risk cutoffs
+        </span>
+
+        <small>
+          Avg. days late → risk band
+        </small>
+
+      </div>
+
+      <canvas
+        id="chart-risk-thresholds"
+        height="190">
+      </canvas>
+
+      <p class="methodology-takeaway">
+        A client averaging just 3 days late already tips into
+        "Medium" — the bands are intentionally tight.
+      </p>
+
+    </div>
+
+
+    <div class="methodology-card">
+
+      <div class="chart-title">
+
+        <span>
+          Priority score weighting
+        </span>
+
+        <small>
+          Max points contributed, of 10
+        </small>
+
+      </div>
+
+      <canvas
+        id="chart-priority-weights"
+        height="190">
+      </canvas>
+
+      <p class="methodology-takeaway">
+        Urgency carries the most weight (4 of 10) — a large invoice
+        can't out-rank a severely overdue one just by size.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<footer class="site-footer">
+
+  <div class="footer-brand">
+
+    <span class="mark">
+      IC
+    </span>
+
+    <strong>
+      Invoice Chaser
+    </strong>
+
+  </div>
+
+  <p>
+    © 2026 Invoice Chaser. All rights reserved.
+  </p>
+
+</footer>
+
+
+
+<!-- =========================================================
+     SCRIPTS
+========================================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script src="/static/js/main.js"></script>
+
+
+<!-- Small UI helper -->
+
+<script>
+
+function copyReminder() {
+
+  const output =
+    document.getElementById("reminder-output");
+
+  if (!output) return;
+
+  const text =
+    output.textContent.trim();
+
+  if (!text ||
+      text === "Select an invoice above to draft a reminder.") {
+    return;
+  }
+
+  navigator.clipboard.writeText(text)
+    .then(() => {
+
+      const button =
+        document.querySelector(".reminder-actions .btn-secondary");
+
+      if (!button) return;
+
+      const original =
+        button.textContent;
+
+      button.textContent =
+        "Copied ✓";
+
+      setTimeout(() => {
+
+        button.textContent =
+          original;
+
+      }, 1800);
+
+    })
+    .catch(() => {
+
+      alert("Unable to copy the message.");
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>
