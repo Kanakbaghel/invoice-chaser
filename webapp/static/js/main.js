@@ -2,7 +2,6 @@
 let bundle = null;
 let uploadToken = null;
 let activeTiers = new Set(["gentle", "polite_followup", "firm", "urgent"]);
-let currentLanguage = "en";
 let targetDateManuallySet = false;
 let tierChart = null;
 let forecastChart = null;
@@ -17,24 +16,47 @@ document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   buildTierChips();
   attachListeners();
+  attachAgentChat();
   renderMethodologyCharts();
-  loadLanguages();
   loadSample();
 });
 
-async function loadLanguages() {
-  try {
-    const res = await fetch("/api/languages");
-    if (!res.ok) return;
-    const languages = await res.json();
-    const sel = document.getElementById("language-select");
-    sel.innerHTML = Object.entries(languages)
-      .map(([code, label]) => `<option value="${code}">${label}</option>`)
-      .join("");
-    sel.value = currentLanguage;
-  } catch (err) {
-    // Keep the English-only fallback already in the markup.
-  }
+// ---------------- Agent chat (real Strands/Bedrock agent) ----------------
+function attachAgentChat() {
+  const btn = document.getElementById("agent-ask-btn");
+  const input = document.getElementById("agent-question");
+  const responseBox = document.getElementById("agent-chat-response");
+
+  if (!btn || !input || !responseBox) return;
+
+  const ask = async () => {
+    const question = input.value.trim();
+    if (!question) return;
+
+    responseBox.style.display = "block";
+    responseBox.textContent = "Thinking…";
+    btn.disabled = true;
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+
+      const data = await res.json();
+      responseBox.textContent = data.answer || data.error || "No response from the agent.";
+    } catch (err) {
+      responseBox.textContent = "Couldn't reach the agent. Try again in a moment.";
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  btn.onclick = ask;
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") ask();
+  });
 }
 
 // ---------------- Theme (dark / light) ----------------
@@ -156,11 +178,6 @@ function attachListeners() {
   document.getElementById("target-amount").oninput = updateForecastResult;
 
   document.getElementById("invoice-select").onchange = onInvoiceSelect;
-
-  document.getElementById("language-select").onchange = (e) => {
-    currentLanguage = e.target.value;
-    refreshReminder();
-  };
 
   document.getElementById("installments-slider").oninput = (e) => {
     document.getElementById("installments-value").textContent = e.target.value;
@@ -347,6 +364,7 @@ function setBundle(data) {
   bundle = data;
 
   renderStats(data.summary);
+  renderHeroMock(data);
   applyFilters();
   renderActionPlan(data.action_plan);
   renderConcentration(data.concentration);
@@ -377,6 +395,51 @@ function setBundle(data) {
 
   document.getElementById("payment-plan-section").style.display = "none";
   document.getElementById("decision-explainer").style.display = "none";
+}
+
+// The hero section has a small "Invoice Chaser Agent — LIVE" preview box.
+// It ships with static placeholder numbers in the HTML; this wires it to
+// the real bundle so it never shows stale figures or an "attention
+// required" alert when nothing actually needs attention.
+function renderHeroMock(data) {
+  const heroBox = document.querySelector(".hero-dashboard");
+  if (!heroBox) return;
+
+  const s = data.summary || {};
+  const totalOutstanding = Number(s.total_outstanding) || 0;
+  const overdueAmount = Number(s.overdue_amount) || 0;
+
+  const amountEl = heroBox.querySelector(".mini-amount");
+  if (amountEl) amountEl.textContent = `₹${totalOutstanding.toFixed(2)}`;
+
+  const statEls = heroBox.querySelectorAll(".mini-stats strong");
+  if (statEls.length >= 3) {
+    statEls[0].textContent = s.open_invoices ?? 0;
+    statEls[1].textContent = s.overdue_invoices ?? 0;
+    statEls[2].textContent = `₹${overdueAmount.toFixed(2)}`;
+  }
+
+  const progressEl = heroBox.querySelector(".mini-progress span");
+  if (progressEl) {
+    const pct = totalOutstanding > 0 ? Math.min(100, (overdueAmount / totalOutstanding) * 100) : 0;
+    progressEl.style.width = `${pct.toFixed(0)}%`;
+  }
+
+  const alertBox = heroBox.querySelector(".mini-alert");
+  if (alertBox) {
+    const worst = (data.overdue && data.overdue[0]) || null;
+    const needsAttention = worst && (worst.tier === "firm" || worst.tier === "urgent");
+
+    if (needsAttention) {
+      alertBox.style.display = "flex";
+      const pEl = alertBox.querySelector("p");
+      if (pEl) {
+        pEl.textContent = `Invoice ${worst.invoice_number} is ${worst.days_overdue} days overdue.`;
+      }
+    } else {
+      alertBox.style.display = "none";
+    }
+  }
 }
 
 function renderStats(s) {
@@ -569,7 +632,19 @@ function renderConcentration(list) {
 
   const FLAG_COLORS = { High: "#ef4444", Medium: "#fbbf24", Low: "#4ade80" };
 
-  list.forEach((item) => {
+  const sorted = [...list].sort(
+    (a, b) => (Number(b.pct_of_total_ar) || 0) - (Number(a.pct_of_total_ar) || 0)
+  );
+
+  const notable = sorted.filter((item) => (item.concentration_flag || "Low") !== "Low");
+  const low = sorted.filter((item) => (item.concentration_flag || "Low") === "Low");
+
+  if (!notable.length) {
+    container.innerHTML =
+      `<div class="empty-state">No customer holds a concerning share of your outstanding AR right now.</div>`;
+  }
+
+  notable.forEach((item) => {
     const row = document.createElement("div");
     row.className = "concentration-row";
 
@@ -593,6 +668,36 @@ function renderConcentration(list) {
 
     container.appendChild(row);
   });
+
+  if (low.length) {
+    const collapsedRow = document.createElement("div");
+    collapsedRow.className = "concentration-collapsed-row";
+    collapsedRow.innerHTML = `
+      <span class="label">${low.length} other customer${low.length === 1 ? "" : "s"}, each under 10% of total AR</span>
+      <button type="button" class="toggle">view all</button>
+    `;
+
+    const grid = document.createElement("div");
+    grid.className = "concentration-low-grid";
+    grid.innerHTML = low
+      .map(
+        (item) => `
+          <div class="concentration-low-item">
+            <strong>${item.customer}</strong>
+            <span>${(Number(item.pct_of_total_ar) || 0).toFixed(1)}%</span>
+          </div>
+        `
+      )
+      .join("");
+
+    collapsedRow.addEventListener("click", () => {
+      const isOpen = grid.classList.toggle("open");
+      collapsedRow.querySelector(".toggle").textContent = isOpen ? "hide" : "view all";
+    });
+
+    container.appendChild(collapsedRow);
+    container.appendChild(grid);
+  }
 }
 
 function renderForecastChart() {
@@ -764,10 +869,7 @@ async function refreshReminder() {
       "Content-Type": "application/json",
     },
 
-    body: JSON.stringify({
-      ...row,
-      language: currentLanguage,
-    }),
+    body: JSON.stringify(row),
   });
 
   const data = await res.json();
