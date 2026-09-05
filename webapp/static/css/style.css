@@ -14,26 +14,26 @@
 ------------------------------------------------------------------ */
 
 :root {
-  --bg: #070c16;
-  --bg-secondary: #0b1626;
-  --surface: #101c30;
-  --surface-2: #142339;
-  --surface-3: #182c47;
+  --bg: #12141b;
+  --bg-secondary: #171a22;
+  --surface: #1b1e28;
+  --surface-2: #20242f;
+  --surface-3: #262b38;
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
-  --text: #f4f7fb;
-  --text-secondary: #a9b7cc;
-  --text-muted: #71829a;
+  --text: #edeff3;
+  --text-secondary: #a3a9b8;
+  --text-muted: #767d8f;
 
-  --primary: #5eead4;
-  --primary-dark: #14b8a6;
-  --primary-contrast: #06181a;
-  --primary-soft: rgba(94, 234, 212, 0.10);
+  --primary: #d4a24e;
+  --primary-dark: #b8863a;
+  --primary-contrast: #1a1408;
+  --primary-soft: rgba(212, 162, 78, 0.12);
 
-  --blue: #60a5fa;
-  --blue-soft: rgba(96, 165, 250, 0.10);
+  --blue: #7c8db5;
+  --blue-soft: rgba(124, 141, 181, 0.10);
 
   --gold: #fbbf24;
   --gold-soft: rgba(251, 191, 36, 0.10);
@@ -47,8 +47,8 @@
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   --shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.25);
 
-  --glow-1: rgba(94, 234, 212, 0.10);
-  --glow-2: rgba(96, 165, 250, 0.10);
+  --glow-1: rgba(212, 162, 78, 0.08);
+  --glow-2: rgba(124, 141, 181, 0.06);
 
   color-scheme: dark;
 }
@@ -56,26 +56,26 @@
 /* ---------------- Design Tokens : Light ---------------- */
 
 :root[data-theme="light"] {
-  --bg: #f4f6fb;
+  --bg: #f7f4ec;
   --bg-secondary: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f3f5f9;
-  --surface-3: #e9edf5;
+  --surface-2: #f1ede1;
+  --surface-3: #e8e1d0;
 
-  --border: rgba(15, 23, 42, 0.09);
-  --border-strong: rgba(15, 23, 42, 0.16);
+  --border: rgba(30, 25, 15, 0.09);
+  --border-strong: rgba(30, 25, 15, 0.16);
 
-  --text: #0f1b2d;
-  --text-secondary: #4b5a70;
-  --text-muted: #798aa1;
+  --text: #201b10;
+  --text-secondary: #5b5646;
+  --text-muted: #8a8371;
 
-  --primary: #0d9488;
-  --primary-dark: #0b756c;
+  --primary: #9c6b1f;
+  --primary-dark: #7a5417;
   --primary-contrast: #ffffff;
-  --primary-soft: rgba(13, 148, 136, 0.09);
+  --primary-soft: rgba(156, 107, 31, 0.10);
 
-  --blue: #2563eb;
-  --blue-soft: rgba(37, 99, 235, 0.08);
+  --blue: #516583;
+  --blue-soft: rgba(81, 101, 131, 0.08);
 
   --gold: #b45309;
   --gold-soft: rgba(180, 83, 9, 0.09);
@@ -89,8 +89,8 @@
   --shadow: 0 24px 55px rgba(15, 23, 42, 0.08);
   --shadow-sm: 0 10px 24px rgba(15, 23, 42, 0.06);
 
-  --glow-1: rgba(13, 148, 136, 0.07);
-  --glow-2: rgba(37, 99, 235, 0.06);
+  --glow-1: rgba(156, 107, 31, 0.05);
+  --glow-2: rgba(81, 101, 131, 0.05);
 
   color-scheme: light;
 }
@@ -98,8 +98,8 @@
 /* Shared tokens */
 
 :root {
-  --display: "Space Grotesk", sans-serif;
-  --body: "Inter", sans-serif;
+  --display: "IBM Plex Serif", serif;
+  --body: "IBM Plex Sans", sans-serif;
   --mono: "IBM Plex Mono", monospace;
 
   --radius-sm: 8px;
@@ -125,11 +125,10 @@ body {
   min-width: 320px;
 
   background:
-    radial-gradient(circle at 15% 0%, var(--glow-1, transparent), transparent 28%),
-    radial-gradient(circle at 85% 8%, var(--glow-2, transparent), transparent 25%),
-    var(--bg, #070c16);
+    radial-gradient(circle at 20% 0%, var(--glow-1, transparent), transparent 32%),
+    var(--bg, #12141b);
 
-  color: var(--text, #f4f7fb);
+  color: var(--text, #edeff3);
   font-family: var(--body);
   line-height: 1.55;
 
@@ -151,7 +150,7 @@ a {
 }
 
 ::selection {
-  background: rgba(94, 234, 212, 0.25);
+  background: rgba(212, 162, 78, 0.25);
 }
 
 :focus-visible {
@@ -311,12 +310,13 @@ a {
 .hero::before {
   content: "";
   position: absolute;
-  width: 320px;
-  height: 320px;
+  width: 280px;
+  height: 280px;
   right: 12%;
   top: 10%;
   background: var(--glow-1);
-  filter: blur(90px);
+  filter: blur(100px);
+  opacity: 0.6;
   pointer-events: none;
 }
 
@@ -372,10 +372,8 @@ a {
 }
 
 .hero-highlight {
-  background: linear-gradient(100deg, var(--primary), var(--blue));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-style: italic;
+  color: var(--text);
 }
 
 .hero p,
@@ -845,9 +843,7 @@ a {
 }
 
 .section-number {
-  color: var(--text-muted);
-  font-family: var(--mono);
-  font-size: 0.72rem;
+  display: none;
 }
 
 .card-status {
@@ -2457,5 +2453,160 @@ input[type="range"] {
 
   .concentration-badge {
     width: fit-content;
+  }
+}
+/* =========================================================
+   CONCENTRATION — collapsed low-risk group
+   Only High/Medium rows render as full rows; everything else
+   folds into one line the person can expand.
+========================================================= */
+
+.concentration-collapsed-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.concentration-collapsed-row:hover {
+  border-color: var(--border-strong);
+}
+
+.concentration-collapsed-row span.label {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.concentration-collapsed-row .toggle {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  color: var(--primary);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.concentration-low-grid {
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 20px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.concentration-low-grid.open {
+  display: grid;
+}
+
+.concentration-low-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.concentration-low-item strong {
+  color: var(--text-secondary);
+  font-family: var(--mono);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 800px) {
+  .concentration-low-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .concentration-low-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   AGENT CHAT — talk to the real Strands/Bedrock agent
+   via POST /api/chat
+========================================================= */
+
+.agent-chat {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.agent-chat-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.agent-chat-row {
+  display: flex;
+  gap: 10px;
+}
+
+.agent-chat-row input[type="text"] {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 0.86rem;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.agent-chat-row input[type="text"]:focus {
+  border-color: rgba(212, 162, 78, 0.55);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.agent-chat-row .btn-secondary {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 20px;
+}
+
+.agent-chat-response {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 620px) {
+  .agent-chat-row {
+    flex-direction: column;
+  }
+
+  .agent-chat-row .btn-secondary {
+    width: 100%;
   }
 }
