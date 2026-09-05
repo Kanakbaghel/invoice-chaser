@@ -3,7 +3,8 @@ app.py (webapp)
 -----------------
 Flask backend for the custom-designed Invoice Chaser website. Serves the
 static frontend and a small JSON API that wraps the same Python logic
-used by the CLI / Strands agent — no AWS needed for any of this.
+used by the CLI / Strands agent. Most routes need no AWS; POST /api/chat
+is the exception — it forwards the question to invoice_agent in src/agent.py.
 
 Run locally with: python webapp/app.py
 Deploy free on Render.com (or Railway) pointing at this file.
@@ -175,6 +176,25 @@ def api_payment_plan():
         days_overdue=d["days_overdue"], num_installments=d.get("num_installments", 3),
     )
     return jsonify({"message": message})
+
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    """Pass a user's question to the Strands/Bedrock agent and return its reply."""
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "Missing 'question' in JSON body."}), 400
+
+    try:
+        # Import here so the rest of the webapp still starts without AWS / strands.
+        from agent import invoice_agent
+        response = invoice_agent(question)
+    except Exception as e:
+        return jsonify({"error": f"Agent failed: {e}"}), 502
+
+    return jsonify({"answer": str(response)})
 
 
 if __name__ == "__main__":
