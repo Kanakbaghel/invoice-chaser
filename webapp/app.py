@@ -19,7 +19,7 @@ from datetime import date
 import pandas as pd
 from flask import Flask, request, jsonify, send_from_directory
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+sys.path.insert(0, os.path.dirname(__file__))
 
 from data_loader import load_invoices, get_open_invoices, DEFAULT_DATA_PATH
 from client_risk import compute_client_risk
