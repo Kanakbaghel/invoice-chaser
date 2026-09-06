@@ -103,5 +103,4 @@ The three demo cases show how the system dynamically shifts its response strateg
 | `2538593943` | 11 days | Polite, structured follow-up |
 | `5364802553` | 31 days | Urgent escalation / installment payment plan |
 
-This progression can be highlighted during the demo walkthrough to show judges exactly how Invoice Chaser adjusts its automated strategies based on the age and risk profile of an outstanding balance.
 
