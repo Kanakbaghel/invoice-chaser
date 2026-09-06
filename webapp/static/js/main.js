@@ -11,30 +11,183 @@ let priorityWeightChart = null;
 
 const TIER_LABELS = { gentle: "Gentle", polite_followup: "Follow-up", firm: "Firm", urgent: "Urgent" };
 
+const PAGE_PATHS = {
+  "/": "home",
+  "/invoices": "invoices",
+  "/customer-risk": "customer-risk",
+  "/ask-the-agent": "ask-the-agent",
+  "/forecast": "forecast",
+  "/reminders": "reminders",
+};
+
 // ---------------- Init ----------------
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   buildTierChips();
   attachListeners();
   attachAgentChat();
+  attachNavigation();
+  attachSidebar();
+  showPage(currentPageFromPath(), {
+    hash: window.location.hash.replace("#", ""),
+    preserveScroll: true,
+  });
   renderMethodologyCharts();
   loadSample();
 });
+
+function currentPageFromPath() {
+  const path = (window.location.pathname || "/").replace(/\/+$/, "") || "/";
+  return PAGE_PATHS[path] || "home";
+}
+
+function showPage(pageId, options = {}) {
+  document.documentElement.setAttribute("data-page", pageId);
+  document.documentElement.classList.remove("sidebar-open");
+  updateSidebarActive(pageId);
+
+  requestAnimationFrame(() => {
+    if (pageId === "home" && bundle) {
+      renderDashboard(bundle);
+    } else if (pageId === "invoices") {
+      renderMethodologyCharts();
+      if (bundle) applyFilters();
+    } else if (pageId === "forecast" && bundle) {
+      renderForecastChart();
+      updateForecastResult();
+    } else if (pageId === "customer-risk" && bundle) {
+      renderConcentration(bundle.concentration);
+      renderRiskSummary(bundle.concentration);
+    }
+
+    if (options.hash) {
+      const target = document.getElementById(options.hash);
+      if (target) {
+        target.scrollIntoView({ behavior: options.preserveScroll ? "auto" : "smooth" });
+        return;
+      }
+    }
+
+    if (!options.preserveScroll) {
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
+function updateSidebarActive(pageId) {
+  document.querySelectorAll(".sidebar-nav a[data-nav]").forEach((link) => {
+    const active = link.dataset.nav === pageId;
+    link.classList.toggle("is-active", active);
+    if (active) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
+}
+
+function attachSidebar() {
+  const toggle = document.getElementById("sidebar-toggle");
+  const collapse = document.getElementById("sidebar-collapse");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  const root = document.documentElement;
+
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      root.classList.toggle("sidebar-open");
+    });
+  }
+
+  if (collapse) {
+    collapse.addEventListener("click", () => {
+      if (window.matchMedia("(max-width: 860px)").matches) {
+        root.classList.remove("sidebar-open");
+        return;
+      }
+      const next = !root.classList.contains("sidebar-collapsed");
+      root.classList.toggle("sidebar-collapsed", next);
+      safeStorageSet("ic-sidebar", next ? "collapsed" : "expanded");
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener("click", () => {
+      root.classList.remove("sidebar-open");
+    });
+  }
+}
+
+function attachNavigation() {
+  document.querySelectorAll("a[data-nav]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      if (event.defaultPrevented) return;
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("http")) return;
+
+      event.preventDefault();
+
+      const url = new URL(href, window.location.origin);
+      const path = url.pathname.replace(/\/+$/, "") || "/";
+      const pageId = PAGE_PATHS[path] || "home";
+      const hash = url.hash.replace("#", "");
+      const next = `${path}${hash ? `#${hash}` : ""}`;
+      const current = `${(window.location.pathname.replace(/\/+$/, "") || "/")}${window.location.hash}`;
+
+      if (current !== next) {
+        history.pushState({ page: pageId }, "", next);
+      }
+
+      showPage(pageId, { hash });
+    });
+  });
+
+  window.addEventListener("popstate", () => {
+    showPage(currentPageFromPath(), {
+      hash: window.location.hash.replace("#", ""),
+    });
+  });
+}
 
 // ---------------- Agent chat (real Strands/Bedrock agent) ----------------
 function attachAgentChat() {
   const btn = document.getElementById("agent-ask-btn");
   const input = document.getElementById("agent-question");
   const responseBox = document.getElementById("agent-chat-response");
+  const log = document.getElementById("agent-chat-log");
 
-  if (!btn || !input || !responseBox) return;
+  if (!btn || !input) return;
 
-  const ask = async () => {
-    const question = input.value.trim();
+  const clearEmpty = () => {
+    if (!log) return;
+    const empty = log.querySelector(".chat-empty");
+    if (empty) empty.remove();
+  };
+
+  const appendBubble = (role, text, extraClass) => {
+    if (!log) return null;
+    clearEmpty();
+    const bubble = document.createElement("div");
+    bubble.className = `chat-bubble ${role}${extraClass ? ` ${extraClass}` : ""}`;
+    bubble.textContent = text;
+    log.appendChild(bubble);
+    log.scrollTop = log.scrollHeight;
+    return bubble;
+  };
+
+  const ask = async (preset) => {
+    const question = (preset || input.value).trim();
     if (!question) return;
 
-    responseBox.style.display = "block";
-    responseBox.textContent = "Thinking…";
+    input.value = "";
+    appendBubble("user", question);
+    const pending = appendBubble("agent", "Thinking…", "is-loading");
+    if (responseBox) {
+      responseBox.textContent = "Thinking…";
+    }
     btn.disabled = true;
 
     try {
@@ -45,17 +198,35 @@ function attachAgentChat() {
       });
 
       const data = await res.json();
-      responseBox.textContent = data.answer || data.error || "No response from the agent.";
+      const text = data.answer || data.error || "No response from the agent.";
+      const isError = !data.answer;
+      if (pending) {
+        pending.textContent = text;
+        pending.classList.remove("is-loading");
+        pending.classList.toggle("is-error", isError);
+      }
+      if (responseBox) responseBox.textContent = text;
     } catch (err) {
-      responseBox.textContent = "Couldn't reach the agent. Try again in a moment.";
+      const text = "Couldn't reach the agent. Try again in a moment.";
+      if (pending) {
+        pending.textContent = text;
+        pending.classList.remove("is-loading");
+        pending.classList.add("is-error");
+      }
+      if (responseBox) responseBox.textContent = text;
     } finally {
       btn.disabled = false;
+      if (log) log.scrollTop = log.scrollHeight;
     }
   };
 
-  btn.onclick = ask;
+  btn.onclick = () => ask();
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") ask();
+  });
+
+  document.querySelectorAll("#suggested-questions [data-question]").forEach((chip) => {
+    chip.addEventListener("click", () => ask(chip.getAttribute("data-question")));
   });
 }
 
@@ -116,14 +287,24 @@ function updateChartThemeColors() {
 
 function getChartColors() {
   const styles = getComputedStyle(document.documentElement);
+  const read = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
   return {
-    text: styles.getPropertyValue("--text-secondary").trim() || "#a9b7cc",
-    grid: styles.getPropertyValue("--border").trim() || "rgba(255,255,255,0.08)",
+    text: read("--text-secondary", "#b6bbc8"),
+    grid: read("--border", "rgba(255,255,255,0.08)"),
+    gentle: read("--chart-gentle", "#86b38d"),
+    followup: read("--chart-followup", "#d4a24e"),
+    firm: read("--chart-firm", "#d4925a"),
+    urgent: read("--chart-urgent", "#d97b7b"),
+    best: read("--chart-best", "#d4a24e"),
+    worst: read("--chart-worst", "#d97b7b"),
+    amount: read("--chart-amount", "#8fa0bd"),
+    risk: read("--chart-risk", "#c4b08a"),
   };
 }
 
 function buildTierChips() {
   const container = document.getElementById("tier-chips");
+  if (!container) return;
   Object.keys(TIER_LABELS).forEach((tier) => {
     const chip = document.createElement("button");
     chip.className = `chip active ${tier}`;
@@ -168,6 +349,7 @@ function attachListeners() {
 
     renderForecastChart();
     updateForecastResult();
+    if (bundle) renderStats(bundle.summary);
   };
 
   document.getElementById("target-date").onchange = () => {
@@ -230,7 +412,7 @@ function clearBanner() {
 }
 
 function setStatsLoading(isLoading) {
-  ["stat-open", "stat-overdue", "stat-outstanding", "stat-overdue-amount"].forEach((id) => {
+  ["stat-open", "stat-overdue", "stat-outstanding", "stat-overdue-amount", "stat-forecast", "stat-atrisk"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
 
@@ -364,10 +546,12 @@ function setBundle(data) {
   bundle = data;
 
   renderStats(data.summary);
+  renderDashboard(data);
   renderHeroMock(data);
   applyFilters();
   renderActionPlan(data.action_plan);
   renderConcentration(data.concentration);
+  renderRiskSummary(data.concentration);
   populateInvoiceSelect(data.overdue);
 
   const asOf = new Date(data.as_of);
@@ -393,8 +577,14 @@ function setBundle(data) {
   document.getElementById("reminder-output").textContent =
     "Select an invoice above to draft a reminder.";
 
-  document.getElementById("payment-plan-section").style.display = "none";
-  document.getElementById("decision-explainer").style.display = "none";
+  const planOutput = document.getElementById("payment-plan-output");
+  if (planOutput) {
+    planOutput.textContent =
+      "Select a firm or urgent invoice to generate a payment-plan offer.";
+  }
+
+  const explainer = document.getElementById("decision-explainer");
+  if (explainer) explainer.style.display = "none";
 }
 
 // The hero section has a small "Invoice Chaser Agent — LIVE" preview box.
@@ -442,15 +632,116 @@ function renderHeroMock(data) {
   }
 }
 
+function getExpectedCash(data) {
+  const forecast = data && data.forecast;
+  if (!forecast || !forecast.dates || !forecast.dates.length) return 0;
+
+  const horizonEl = document.getElementById("horizon-slider");
+  const horizon = parseInt(horizonEl && horizonEl.value ? horizonEl.value : "60", 10);
+  const asOf = new Date(data.as_of);
+  const cutoff = new Date(asOf);
+  cutoff.setDate(cutoff.getDate() + horizon);
+
+  let value = 0;
+  forecast.dates.forEach((date, index) => {
+    if (new Date(date) <= cutoff) {
+      value = Number(forecast.best[index]) || 0;
+    }
+  });
+  return value;
+}
+
+function countAtRiskCustomers(data) {
+  const list = (data && data.concentration) || [];
+  const notable = list.filter((item) => (item.concentration_flag || "Low") !== "Low");
+  if (notable.length) return notable.length;
+
+  return Object.values((data && data.risk) || {}).filter(
+    (item) => item.risk_level === "High" || item.risk_level === "Medium"
+  ).length;
+}
+
+function formatAsOf(dateValue) {
+  if (!dateValue) return "";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return String(dateValue);
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function renderDashboard(data) {
+  if (!data) return;
+
+  const asOfText = data.as_of ? `As of ${formatAsOf(data.as_of)}` : "";
+  const topbar = document.getElementById("topbar-as-of");
+  const dashAsOf = document.getElementById("dash-as-of");
+  if (topbar) topbar.textContent = asOfText || "Current ledger";
+  if (dashAsOf) dashAsOf.textContent = asOfText;
+
+  renderDashboardOverdue((data.overdue || []).slice(0, 5));
+}
+
+function renderDashboardOverdue(rows) {
+  const tbody = document.getElementById("dash-overdue-body");
+  const empty = document.getElementById("dash-overdue-empty");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  if (empty) empty.style.display = rows.length ? "none" : "block";
+
+  rows.forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.customer}</td>
+      <td>${row.invoice_number}</td>
+      <td>₹${row.amount.toFixed(2)}</td>
+      <td>${row.due_date}</td>
+      <td>${row.days_overdue}</td>
+      <td><span class="tier-badge ${row.tier}">${TIER_LABELS[row.tier] || row.tier}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderRiskSummary(list) {
+  const totalEl = document.getElementById("risk-stat-total");
+  const elevatedEl = document.getElementById("risk-stat-elevated");
+  const largestEl = document.getElementById("risk-stat-largest");
+  const largestName = document.getElementById("risk-stat-largest-name");
+  if (!totalEl) return;
+
+  const rows = list || [];
+  const elevated = rows.filter((item) => (item.concentration_flag || "Low") !== "Low");
+  const largest = [...rows].sort(
+    (a, b) => (Number(b.pct_of_total_ar) || 0) - (Number(a.pct_of_total_ar) || 0)
+  )[0];
+
+  totalEl.textContent = rows.length;
+  if (elevatedEl) elevatedEl.textContent = elevated.length;
+  if (largestEl) {
+    largestEl.textContent = largest ? `${Number(largest.pct_of_total_ar).toFixed(1)}%` : "—";
+  }
+  if (largestName) {
+    largestName.textContent = largest ? largest.customer : "Of total outstanding";
+  }
+}
+
 function renderStats(s) {
   const totalOutstanding = Number(s.total_outstanding) || 0;
   const overdueAmount = Number(s.overdue_amount) || 0;
+  const expectedCash = bundle ? getExpectedCash(bundle) : 0;
+  const atRisk = bundle ? countAtRiskCustomers(bundle) : 0;
 
   const statElements = {
     "stat-open": s.open_invoices ?? 0,
     "stat-overdue": s.overdue_invoices ?? 0,
     "stat-outstanding": `₹${totalOutstanding.toFixed(2)}`,
     "stat-overdue-amount": `₹${overdueAmount.toFixed(2)}`,
+    "stat-forecast": `₹${expectedCash.toFixed(2)}`,
+    "stat-atrisk": atRisk,
   };
 
   Object.entries(statElements).forEach(([id, value]) => {
@@ -470,10 +761,15 @@ function renderStats(s) {
 function applyFilters() {
   if (!bundle) return;
 
-  const search = document.getElementById("search-input").value.toLowerCase();
-  const min = parseFloat(document.getElementById("amount-min").value) || 0;
+  const searchEl = document.getElementById("search-input");
+  const minEl = document.getElementById("amount-min");
+  const maxEl = document.getElementById("amount-max");
+  if (!searchEl || !minEl) return;
 
-  const maxRaw = document.getElementById("amount-max").value;
+  const search = searchEl.value.toLowerCase();
+  const min = parseFloat(minEl.value) || 0;
+
+  const maxRaw = maxEl ? maxEl.value : "";
   const max = maxRaw ? parseFloat(maxRaw) : Infinity;
 
   const filtered = bundle.overdue.filter((row) =>
@@ -489,11 +785,12 @@ function applyFilters() {
 
 function renderTable(rows) {
   const tbody = document.getElementById("invoice-table-body");
+  if (!tbody) return;
 
   tbody.innerHTML = "";
 
-  document.getElementById("table-empty").style.display =
-    rows.length ? "none" : "block";
+  const empty = document.getElementById("table-empty");
+  if (empty) empty.style.display = rows.length ? "none" : "block";
 
   rows.forEach((row) => {
     const tr = document.createElement("tr");
@@ -524,17 +821,17 @@ function renderTierChart(rows) {
   });
 
   const ctx = document.getElementById("tier-chart");
+  if (!ctx) return;
 
   const dataValues = Object.keys(TIER_LABELS).map((t) => totals[t]);
 
-  const colors = [
-    "#2dd4bf",
-    "#fbbf24",
-    "#fb7185",
-    "#ef4444",
-  ];
-
   const chartColors = getChartColors();
+  const colors = [
+    chartColors.gentle,
+    chartColors.followup,
+    chartColors.firm,
+    chartColors.urgent,
+  ];
 
   if (tierChart) {
     tierChart.destroy();
@@ -594,6 +891,7 @@ function renderTierChart(rows) {
 
 function renderActionPlan(list) {
   const container = document.getElementById("action-plan-list");
+  if (!container) return;
 
   container.innerHTML = "";
 
@@ -603,7 +901,7 @@ function renderActionPlan(list) {
     return;
   }
 
-  list.slice(0, 10).forEach((item, i) => {
+  list.slice(0, 5).forEach((item, i) => {
     const row = document.createElement("div");
 
     row.className = "action-row";
@@ -630,7 +928,8 @@ function renderConcentration(list) {
     return;
   }
 
-  const FLAG_COLORS = { High: "#ef4444", Medium: "#fbbf24", Low: "#4ade80" };
+  const palette = getChartColors();
+  const FLAG_COLORS = { High: palette.urgent, Medium: palette.followup, Low: palette.gentle };
 
   const sorted = [...list].sort(
     (a, b) => (Number(b.pct_of_total_ar) || 0) - (Number(a.pct_of_total_ar) || 0)
@@ -743,8 +1042,8 @@ function renderForecastChart() {
         {
           label: "Best case",
           data: best,
-          borderColor: "#2dd4bf",
-          backgroundColor: "rgba(45,212,191,0.12)",
+          borderColor: chartColors.best,
+          backgroundColor: "rgba(212,162,78,0.14)",
           tension: 0.2,
           fill: true,
         },
@@ -752,8 +1051,8 @@ function renderForecastChart() {
         {
           label: "Worst case",
           data: worst,
-          borderColor: "#fb7185",
-          backgroundColor: "rgba(251,113,133,0.10)",
+          borderColor: chartColors.worst,
+          backgroundColor: "rgba(217,123,123,0.12)",
           tension: 0.2,
           fill: true,
         },
@@ -946,11 +1245,16 @@ async function onInvoiceSelect() {
   const planSection =
     document.getElementById("payment-plan-section");
 
+  if (planSection) planSection.style.display = "block";
+
   if (row.tier === "firm" || row.tier === "urgent") {
-    planSection.style.display = "block";
     fetchPaymentPlan();
   } else {
-    planSection.style.display = "none";
+    const planOutput = document.getElementById("payment-plan-output");
+    if (planOutput) {
+      planOutput.textContent =
+        "Payment plans are suggested for firm or urgent invoices.";
+    }
   }
 }
 
@@ -1015,10 +1319,10 @@ function renderMethodologyCharts() {
             ],
 
             backgroundColor: [
-              "#4ade80",
-              "#fbbf24",
-              "#fb7185",
-              "#ef4444",
+              chartColors.gentle,
+              chartColors.followup,
+              chartColors.firm,
+              chartColors.urgent,
             ],
 
             borderRadius: 4,
@@ -1079,9 +1383,9 @@ function renderMethodologyCharts() {
             ],
 
             backgroundColor: [
-              "#4ade80",
-              "#fbbf24",
-              "#ef4444",
+              chartColors.gentle,
+              chartColors.followup,
+              chartColors.urgent,
             ],
 
             borderRadius: 4,
@@ -1135,19 +1439,19 @@ function renderMethodologyCharts() {
           {
             label: "Amount",
             data: [3],
-            backgroundColor: "#60a5fa",
+            backgroundColor: chartColors.amount,
           },
 
           {
             label: "Urgency",
             data: [4],
-            backgroundColor: "#fb7185",
+            backgroundColor: chartColors.urgent,
           },
 
           {
             label: "Client risk",
             data: [3],
-            backgroundColor: "#fbbf24",
+            backgroundColor: chartColors.risk,
           },
         ],
       },

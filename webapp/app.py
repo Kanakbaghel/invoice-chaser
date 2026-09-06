@@ -46,9 +46,22 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 UPLOAD_CACHE = {}
 
 
+def _serve_index():
+    return send_from_directory(app.template_folder, "index.html")
+
+
 @app.route("/")
 def index():
-    return send_from_directory(app.template_folder, "index.html")
+    return _serve_index()
+
+
+@app.route("/invoices")
+@app.route("/customer-risk")
+@app.route("/ask-the-agent")
+@app.route("/forecast")
+@app.route("/reminders")
+def app_pages():
+    return _serve_index()
 
 
 @app.route("/api/sample")
