@@ -26,27 +26,109 @@
         var theme = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
         document.documentElement.setAttribute("data-theme", theme);
       } catch (e) {}
+      try {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        var pages = {
+          "/": "home",
+          "/invoices": "invoices",
+          "/customer-risk": "customer-risk",
+          "/ask-the-agent": "ask-the-agent",
+          "/forecast": "forecast",
+          "/reminders": "reminders"
+        };
+        document.documentElement.setAttribute("data-page", pages[path] || "home");
+      } catch (e) {}
+      try {
+        if (localStorage.getItem("ic-sidebar") === "collapsed") {
+          document.documentElement.classList.add("sidebar-collapsed");
+        }
+      } catch (e) {}
     })();
   </script>
 </head>
 
 <body>
 
-<!-- =========================================================
-     HEADER
-========================================================= -->
+<aside class="app-sidebar" id="app-sidebar">
 
-<header class="site-header">
-
-  <a href="#" class="wordmark">
+  <a href="/" class="sidebar-brand" data-nav="home">
     <span class="mark">IC</span>
-    <span>Invoice Chaser</span>
+    <span class="sidebar-brand-text">
+      <strong>Invoice Chaser</strong>
+      <small>Collections</small>
+    </span>
   </a>
 
-  <nav class="site-nav">
-    <a href="#ledger">Dashboard</a>
-    <a href="#how">How it works</a>
-    <a href="#methodology">Methodology</a>
+  <nav class="sidebar-nav" aria-label="Primary">
+
+    <div class="sidebar-group">
+      <span class="sidebar-label">Main</span>
+      <a href="/" data-nav="home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg>
+        <span>Dashboard</span>
+      </a>
+    </div>
+
+    <div class="sidebar-group">
+      <span class="sidebar-label">Invoice Management</span>
+      <a href="/invoices" data-nav="invoices">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7.2L19 8.2V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5V8h4.5"/><path d="M9 12h6M9 15.5h6"/></svg>
+        <span>Invoices</span>
+      </a>
+      <a href="/reminders" data-nav="reminders">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-12Z"/><path d="m5 7 7 5 7-5"/></svg>
+        <span>Reminders &amp; Payment Plans</span>
+      </a>
+    </div>
+
+    <div class="sidebar-group">
+      <span class="sidebar-label">Analytics</span>
+      <a href="/customer-risk" data-nav="customer-risk">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 4 7v5c0 5 3.4 7.8 8 8.5 4.6-.7 8-3.5 8-8.5V7l-8-3.5Z"/><path d="M12 8v5M12 15.5h.01"/></svg>
+        <span>Customer Risk</span>
+      </a>
+      <a href="/forecast" data-nav="forecast">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="m5 14 4.2-4.2 3.3 3.2L19 6"/><path d="M15 6h4v4"/></svg>
+        <span>Cash Flow Forecast</span>
+      </a>
+    </div>
+
+    <div class="sidebar-group sidebar-group-ai">
+      <span class="sidebar-label">AI</span>
+      <a href="/ask-the-agent" data-nav="ask-the-agent">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5 13.8 9H18l-3.4 2.6L16 16.5 12 13.8 8 16.5l1.4-4.9L6 9h4.2L12 4.5Z"/></svg>
+        <span>Ask the Agent</span>
+      </a>
+    </div>
+
+  </nav>
+
+  <div class="sidebar-footer">
+    <button type="button" class="sidebar-collapse" id="sidebar-collapse" aria-label="Collapse sidebar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6"/></svg>
+      <span>Collapse</span>
+    </button>
+  </div>
+
+</aside>
+
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+<div class="app-shell">
+
+  <header class="app-topbar">
+
+    <button type="button" class="sidebar-open-btn" id="sidebar-toggle" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+
+    <div class="topbar-context">
+      <span class="topbar-kicker">Ledger</span>
+      <strong id="topbar-as-of">Loading…</strong>
+      <span class="topbar-meta">
+        <span id="stat-open">—</span> open invoices
+      </span>
+    </div>
 
     <button
       id="theme-toggle"
@@ -65,10 +147,7 @@
       </svg>
 
       <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.2"
-                stroke="currentColor"
-                stroke-width="1.8"/>
-
+        <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/>
         <path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"
               stroke="currentColor"
               stroke-width="1.8"
@@ -76,809 +155,256 @@
       </svg>
 
     </button>
-  </nav>
 
-</header>
+  </header>
 
-
-<!-- =========================================================
-     HERO
-========================================================= -->
-
-<section class="hero">
-
-  <div class="hero-content">
-
-    <p class="eyebrow">
-      AI-powered collections
-    </p>
-
-    <h1>
-      Get paid without
-      <span class="hero-highlight">the awkward emails</span>
-    </h1>
-
-    <p class="hero-description">
-      Invoice Chaser watches every open invoice, decides who needs
-      attention today, drafts the right follow-up in seconds, and offers
-      a payment plan when a hard demand won't land well.
-    </p>
-
-    <div class="hero-actions">
-
-      <a href="#ledger" class="cta">
-        Open the ledger ↓
-      </a>
-
-      <a href="#how" class="hero-secondary">
-        See how it works →
-      </a>
-
-    </div>
-
-    <div class="hero-meta">
-      <span>✓ AI-powered follow-ups</span>
-      <span>✓ Risk-aware decisions</span>
-      <span>✓ Cash-flow forecasting</span>
-    </div>
-
-  </div>
-
-
-  <div class="hero-dashboard">
-
-    <div class="dashboard-window">
-
-      <div class="window-header">
-
-        <div class="window-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-
-        <span class="window-title">
-          Invoice Chaser Agent
-        </span>
-
-        <span class="window-live">
-          <span></span>
-          LIVE
-        </span>
-
-      </div>
-
-
-      <div class="mini-dashboard">
-
-        <div class="mini-label">
-          COLLECTION OVERVIEW
-        </div>
-
-        <div class="mini-amount">
-          ₹5,626.06
-        </div>
-
-        <div class="mini-subtitle">
-          total outstanding
-        </div>
-
-        <div class="mini-progress">
-          <span></span>
-        </div>
-
-
-        <div class="mini-stats">
-
-          <div>
-            <strong>91</strong>
-            <span>Open</span>
-          </div>
-
-          <div>
-            <strong>11</strong>
-            <span>Overdue</span>
-          </div>
-
-          <div>
-            <strong>₹825</strong>
-            <span>At risk</span>
-          </div>
-
-        </div>
-
-
-        <div class="mini-alert">
-
-          <span class="alert-icon">!</span>
-
-          <div>
-            <strong>Agent attention required</strong>
-            <p>1 invoice is significantly overdue.</p>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</section>
-
+  <main class="app-main">
 
 
 <!-- =========================================================
-     HOW IT WORKS
+     DASHBOARD
 ========================================================= -->
 
-<section class="how-section" id="how">
-
-  <div class="section-heading">
-
-    <div>
-      <span class="section-kicker">
-        HOW IT WORKS
-      </span>
-
-      <h2>
-        Your collections,
-        <span>without the chasing.</span>
-      </h2>
-    </div>
-
-    <p>
-      Invoice Chaser combines invoice analysis, client risk,
-      agent-generated communication and cash-flow forecasting
-      into one workflow.
-    </p>
-
-  </div>
-
-
-  <div class="workflow-grid">
-
-    <div class="workflow-card">
-
-      <span class="workflow-number">01</span>
-
-      <div class="workflow-icon">
-        ◫
-      </div>
-
-      <h3>
-        Analyze
-      </h3>
-
-      <p>
-        Load the sample ledger or upload your own invoice data.
-        The system identifies open and overdue invoices.
-      </p>
-
-    </div>
-
-
-    <div class="workflow-card">
-
-      <span class="workflow-number">02</span>
-
-      <div class="workflow-icon">
-        ✦
-      </div>
-
-      <h3>
-        Prioritize
-      </h3>
-
-      <p>
-        The agent weighs amount, days overdue, urgency
-        and client history to decide what needs attention first.
-      </p>
-
-    </div>
-
-
-    <div class="workflow-card">
-
-      <span class="workflow-number">03</span>
-
-      <div class="workflow-icon">
-        →
-      </div>
-
-      <h3>
-        Act
-      </h3>
-
-      <p>
-        Generate an appropriate follow-up message, or offer
-        a payment plan when a stronger demand may not work.
-      </p>
-
-    </div>
-
-
-    <div class="workflow-card">
-
-      <span class="workflow-number">04</span>
-
-      <div class="workflow-icon">
-        ↗
-      </div>
-
-      <h3>
-        Forecast
-      </h3>
-
-      <p>
-        See best-case and worst-case cash-flow scenarios
-        and know whether upcoming needs are covered.
-      </p>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-
-<!-- =========================================================
-     MAIN APPLICATION
-========================================================= -->
-
-<section class="ledger" id="ledger">
+<div id="page-home" class="app-page" data-page="home">
 
   <div id="status-banner-container"></div>
 
-
-  <!-- =======================================================
-       DATA SOURCE
-  ======================================================== -->
-
-  <div class="ledger-card source-card">
-
-    <div class="card-heading">
-
-      <div>
-
-        <span class="section-number">
-          01
-        </span>
-
-        <h2>
-          Choose what to analyze
-        </h2>
-
-      </div>
-
-      <span class="card-status">
-        Data source
-      </span>
-
+  <section class="page-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p>A quick view of outstanding receivables, overdue work, and the next actions worth taking.</p>
     </div>
+    <div class="page-header-meta" id="dash-as-of"></div>
+  </section>
 
-    <p class="caption">
-      Try the sample dataset, or upload your own invoices —
-      nothing you upload is stored.
-    </p>
-
+  <div class="ledger-card source-card source-card-compact">
+    <div class="card-heading">
+      <div>
+        <h2>Choose what to analyze</h2>
+      </div>
+      <span class="card-status">Data source</span>
+    </div>
+    <p class="caption">Try the sample dataset, or upload your own invoices — nothing you upload is stored.</p>
 
     <div class="source-toggle">
-
-      <button
-        class="toggle-btn active"
-        id="btn-sample"
-        type="button">
-        Sample dataset
-      </button>
-
-      <button
-        class="toggle-btn"
-        id="btn-upload"
-        type="button">
-        Upload your own
-      </button>
-
+      <button class="toggle-btn active" id="btn-sample" type="button">Sample dataset</button>
+      <button class="toggle-btn" id="btn-upload" type="button">Upload your own</button>
     </div>
 
-
     <div id="sample-controls">
-
       <div class="field-row">
-
         <div class="field">
-
           <label for="snapshot-date">
             Snapshot date
             <span>(simulated "today")</span>
           </label>
-
-          <input
-            type="date"
-            id="snapshot-date"
-            value="2013-03-01">
-
+          <input type="date" id="snapshot-date" value="2013-03-01">
         </div>
-
       </div>
-
     </div>
 
-
-    <div
-      id="upload-controls"
-      style="display:none;">
-
-      <div
-        class="file-drop"
-        id="file-drop">
-
-        <div class="upload-icon">
-          ↑
-        </div>
-
-        <strong>
-          Upload your invoice data
-        </strong>
-
-        <span id="file-drop-label">
-          Click to choose a CSV or Excel file
-        </span>
-
+    <div id="upload-controls" style="display:none;">
+      <div class="file-drop" id="file-drop">
+        <div class="upload-icon">↑</div>
+        <strong>Upload your invoice data</strong>
+        <span id="file-drop-label">Click to choose a CSV or Excel file</span>
       </div>
 
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none;">
 
-      <input
-        type="file"
-        id="file-input"
-        accept=".csv,.xlsx,.xls"
-        style="display:none;">
-
-
-      <div
-        id="mapping-container"
-        style="display:none; margin-top:16px;">
-
+      <div id="mapping-container" style="display:none; margin-top:16px;">
         <div class="field-row">
-
           <div class="field">
-
-            <label>
-              Client / customer column
-            </label>
-
+            <label>Client / customer column</label>
             <select id="map-customer"></select>
-
           </div>
-
-
           <div class="field">
-
-            <label>
-              Invoice amount column
-            </label>
-
+            <label>Invoice amount column</label>
             <select id="map-amount"></select>
-
           </div>
-
-
           <div class="field">
-
-            <label>
-              Invoice number column
-            </label>
-
+            <label>Invoice number column</label>
             <select id="map-id"></select>
-
           </div>
-
         </div>
-
-
         <div class="field-row">
-
           <div class="field">
-
-            <label>
-              Due date column
-            </label>
-
+            <label>Due date column</label>
             <select id="map-due"></select>
-
           </div>
-
-
           <div class="field">
-
-            <label>
-              Paid status column
-              <span>(optional)</span>
-            </label>
-
+            <label>Paid status column <span>(optional)</span></label>
             <select id="map-paid"></select>
-
           </div>
-
         </div>
-
-
-        <button
-          class="cta cta-block"
-          id="compute-upload-btn"
-          type="button">
-
+        <button class="cta cta-block" id="compute-upload-btn" type="button">
           Analyze my invoices →
-
         </button>
-
       </div>
-
     </div>
-
   </div>
 
-
-
-  <!-- =======================================================
-       STATISTICS
-  ======================================================== -->
-
-  <div class="ledger-card stats-card">
-
-    <div class="stats-strip">
-
-      <div class="stat">
-
-        <div class="stat-icon">
-          ◫
-        </div>
-
-        <div class="label">
-          Open invoices
-        </div>
-
-        <div
-          class="value"
-          id="stat-open">
-          —
-        </div>
-
-        <div class="stat-note">
-          Total active invoices
-        </div>
-
-      </div>
-
-
-      <div class="stat stat-danger">
-
-        <div class="stat-icon">
-          !
-        </div>
-
-        <div class="label">
-          Overdue
-        </div>
-
-        <div
-          class="value"
-          id="stat-overdue">
-          —
-        </div>
-
-        <div class="stat-note">
-          Need attention
-        </div>
-
-      </div>
-
-
-      <div class="stat">
-
-        <div class="stat-icon">
-          ₹
-        </div>
-
-        <div class="label">
-          Total outstanding
-        </div>
-
-        <div
-          class="value"
-          id="stat-outstanding">
-          —
-        </div>
-
-        <div class="stat-note">
-          Money still to collect
-        </div>
-
-      </div>
-
-
-      <div class="stat stat-warning">
-
-        <div class="stat-icon">
-          !
-        </div>
-
-        <div class="label">
-          Overdue amount
-        </div>
-
-        <div
-          class="value"
-          id="stat-overdue-amount">
-          —
-        </div>
-
-        <div class="stat-note">
-          Currently at risk
-        </div>
-
-      </div>
-
+  <div class="stats-strip dash-stats">
+    <div class="stat stat-featured">
+      <div class="stat-icon">₹</div>
+      <div class="label">Total outstanding</div>
+      <div class="value" id="stat-outstanding">—</div>
+      <div class="stat-note">Money still to collect</div>
     </div>
-
+    <div class="stat stat-warning">
+      <div class="stat-icon">!</div>
+      <div class="label">Overdue amount</div>
+      <div class="value" id="stat-overdue-amount">—</div>
+      <div class="stat-note">Currently at risk</div>
+    </div>
+    <div class="stat stat-danger">
+      <div class="stat-icon">#</div>
+      <div class="label">Overdue invoices</div>
+      <div class="value" id="stat-overdue">—</div>
+      <div class="stat-note">Need attention</div>
+    </div>
+    <div class="stat stat-forecast">
+      <div class="stat-icon">↗</div>
+      <div class="label">Expected cash</div>
+      <div class="value" id="stat-forecast">—</div>
+      <div class="stat-note">Best-case in current horizon</div>
+    </div>
+    <div class="stat stat-risk">
+      <div class="stat-icon">◈</div>
+      <div class="label">At-risk customers</div>
+      <div class="value" id="stat-atrisk">—</div>
+      <div class="stat-note">Elevated concentration</div>
+    </div>
   </div>
 
+  <div class="dash-grid">
 
-
-  <!-- =======================================================
-       CUSTOMER CONCENTRATION RISK
-       NEW FEATURE
-  ======================================================== -->
-
-  <div class="ledger-card concentration-card">
-
-    <div class="card-heading">
-
-      <div>
-
-        <span class="section-number">
-          01A
-        </span>
-
-        <h2>
-          Customer concentration risk
-        </h2>
-
-      </div>
-
-      <span class="card-status">
-        Portfolio risk
-      </span>
-
-    </div>
-
-    <p class="caption">
-      See whether too much of your outstanding receivables
-      depend on a single customer.
-    </p>
-
-
-    <div
-      id="concentration-list"
-      class="concentration-list">
-
-      <div class="empty-state">
-        Loading concentration data...
-      </div>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- =======================================================
-       AI AGENT INSIGHT
-  ======================================================== -->
-
-  <div class="agent-card">
-
-    <div class="agent-card-header">
-
-      <div class="agent-identity">
-
-        <div class="agent-avatar">
-          ✦
-        </div>
-
+    <div class="ledger-card">
+      <div class="card-heading">
         <div>
-
-          <span class="agent-label">
-            INVOICE CHASER AGENT
-          </span>
-
-          <h2>
-            Here's what I found
-          </h2>
-
+          <h2>Overdue invoices</h2>
         </div>
-
+        <a href="/invoices" class="card-link" data-nav="invoices">View all</a>
       </div>
-
-
-      <div class="agent-live-badge">
-
-        <span></span>
-
-        Agent ready
-
-      </div>
-
-    </div>
-
-
-    <div class="agent-insight">
-
-      <div class="insight-icon">
-        ✦
-      </div>
-
-      <div>
-
-        <strong id="agent-summary">
-          Your invoices are being analyzed.
-        </strong>
-
-        <p>
-          The agent prioritizes overdue invoices based on
-          amount, days overdue, urgency and client history.
-        </p>
-
-      </div>
-
-    </div>
-
-
-    <div class="agent-capabilities">
-
-      <div>
-        <span>01</span>
-        Identify priority invoices
-      </div>
-
-      <div>
-        <span>02</span>
-        Draft personalized follow-ups
-      </div>
-
-      <div>
-        <span>03</span>
-        Recommend payment plans
-      </div>
-
-    </div>
-
-
-    <div class="agent-chat">
-      <label for="agent-question" class="agent-chat-label">
-        Ask the agent anything
-      </label>
-      <div class="agent-chat-row">
-        <input
-          type="text"
-          id="agent-question"
-          placeholder='e.g. &quot;how much am I owed right now?&quot; or &quot;draft a follow-up for invoice X&quot;'>
-        <button type="button" class="btn-secondary" id="agent-ask-btn">
-          Ask
-        </button>
-      </div>
-      <div
-        id="agent-chat-response"
-        class="agent-chat-response"
-        style="display:none;">
-      </div>
-    </div>
-
-  </div>
-
-
-
-  <!-- =======================================================
-       OVERDUE INVOICES
-  ======================================================== -->
-
-  <div class="ledger-card">
-
-    <div class="card-heading">
-
-      <div>
-
-        <span class="section-number">
-          02
-        </span>
-
-        <h2>
-          Overdue invoices
-        </h2>
-
-      </div>
-
-      <span class="card-status danger">
-        Needs attention
-      </span>
-
-    </div>
-
-    <p class="caption">
-      Filter your overdue invoices by client, urgency or amount.
-    </p>
-
-
-    <div class="filters">
-
-      <div class="field search-field">
-
-        <label>
-          Search client
-        </label>
-
-        <input
-          type="text"
-          id="search-input"
-          placeholder="Client name...">
-
-      </div>
-
-
-      <div class="field">
-
-        <label>
-          Urgency
-        </label>
-
-        <div
-          class="tier-chips"
-          id="tier-chips">
-        </div>
-
-      </div>
-
-
-      <div class="field">
-
-        <label>
-          Min amount
-        </label>
-
-        <input
-          type="number"
-          id="amount-min"
-          value="0">
-
-      </div>
-
-
-      <div class="field">
-
-        <label>
-          Max amount
-        </label>
-
-        <input
-          type="number"
-          id="amount-max"
-          placeholder="No limit">
-
-      </div>
-
-    </div>
-
-
-    <div class="split">
+      <p class="caption">The most urgent items from the current ledger.</p>
 
       <div class="table-wrapper">
-
         <table class="ledger-table">
-
           <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Invoice</th>
+              <th>Amount</th>
+              <th>Due date</th>
+              <th>Days overdue</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="dash-overdue-body"></tbody>
+        </table>
+        <div class="empty-state" id="dash-overdue-empty" style="display:none;">
+          No overdue invoices right now.
+        </div>
+      </div>
+    </div>
 
+    <div class="ledger-card">
+      <div class="card-heading">
+        <div>
+          <h2>This week's action plan</h2>
+        </div>
+        <span class="card-status">AI prioritized</span>
+      </div>
+      <p class="caption">Ranked by money at stake, how overdue it is, and the client's track record.</p>
+      <div class="action-plan-header">
+        <span>Priority</span>
+        <span>Invoice</span>
+        <span>Recommended action</span>
+      </div>
+      <div id="action-plan-list"></div>
+    </div>
+
+  </div>
+
+  <div class="ledger-card">
+    <div class="card-heading">
+      <div>
+        <h2>Quick actions</h2>
+      </div>
+    </div>
+    <p class="caption">Jump to the tool you need next.</p>
+    <div class="quick-actions">
+      <a href="/invoices" class="quick-action" data-nav="invoices">
+        <span class="quick-action-icon">◫</span>
+        <strong>View Invoices</strong>
+        <span>Filter and review the full overdue list</span>
+      </a>
+      <a href="/reminders" class="quick-action" data-nav="reminders">
+        <span class="quick-action-icon">→</span>
+        <strong>Create Reminder</strong>
+        <span>Draft a follow-up for an overdue invoice</span>
+      </a>
+      <a href="/customer-risk" class="quick-action" data-nav="customer-risk">
+        <span class="quick-action-icon">◈</span>
+        <strong>View Customer Risk</strong>
+        <span>See concentration and exposure</span>
+      </a>
+      <a href="/ask-the-agent" class="quick-action" data-nav="ask-the-agent">
+        <span class="quick-action-icon">✦</span>
+        <strong>Ask Agent</strong>
+        <span>Ask a question about this ledger</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     INVOICES
+========================================================= -->
+
+<div id="page-invoices" class="app-page" data-page="invoices">
+
+  <section class="page-header">
+    <div>
+      <h1>Invoices</h1>
+      <p>Filter overdue invoices by client, urgency, or amount, and see how the book breaks down by tone.</p>
+    </div>
+    <span class="card-status danger">Needs attention</span>
+  </section>
+
+  <div class="ledger-card">
+    <div class="card-heading">
+      <div>
+        <h2>Overdue invoices</h2>
+      </div>
+    </div>
+    <p class="caption">Filter your overdue invoices by client, urgency or amount.</p>
+
+    <div class="filters">
+      <div class="field search-field">
+        <label>Search client</label>
+        <input type="text" id="search-input" placeholder="Client name...">
+      </div>
+      <div class="field">
+        <label>Urgency</label>
+        <div class="tier-chips" id="tier-chips"></div>
+      </div>
+      <div class="field">
+        <label>Min amount</label>
+        <input type="number" id="amount-min" value="0">
+      </div>
+      <div class="field">
+        <label>Max amount</label>
+        <input type="number" id="amount-max" placeholder="No limit">
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="table-wrapper">
+        <table class="ledger-table">
+          <thead>
             <tr>
               <th>Client</th>
               <th>Invoice #</th>
@@ -887,664 +413,397 @@
               <th>Days late</th>
               <th>Tier</th>
             </tr>
-
           </thead>
-
           <tbody id="invoice-table-body"></tbody>
-
         </table>
-
-
-        <div
-          class="empty-state"
-          id="table-empty"
-          style="display:none;">
-
+        <div class="empty-state" id="table-empty" style="display:none;">
           No invoices match these filters.
-
         </div>
-
       </div>
-
 
       <div class="chart-panel">
-
         <div class="chart-title">
-
-          <span>
-            Urgency breakdown
-          </span>
-
-          <small>
-            Amount by tier
-          </small>
-
+          <span>Urgency breakdown</span>
+          <small>Amount by tier</small>
         </div>
-
-        <canvas
-          id="tier-chart"
-          height="220">
-        </canvas>
-
+        <canvas id="tier-chart" height="220"></canvas>
       </div>
-
     </div>
-
   </div>
 
-
-
-  <!-- =======================================================
-       ACTION PLAN
-  ======================================================== -->
-
-  <div class="ledger-card">
-
-    <div class="card-heading">
-
+  <section class="how-section methodology-section" id="methodology">
+    <div class="section-heading">
       <div>
+        <span class="section-kicker">METHODOLOGY</span>
+        <h2>Data-driven design, <span>not vibes.</span></h2>
+      </div>
+      <p>
+        Every threshold below is a constant in the code — not a
+        subjective call made per invoice. This is what actually
+        decides tone, risk, and priority.
+      </p>
+    </div>
 
-        <span class="section-number">
-          03
-        </span>
-
-        <h2>
-          This week's action plan
-        </h2>
-
+    <div class="methodology-grid">
+      <div class="methodology-card">
+        <div class="chart-title">
+          <span>Urgency thresholds</span>
+          <small>Days overdue → tone</small>
+        </div>
+        <canvas id="chart-tier-thresholds" height="190"></canvas>
+        <p class="methodology-takeaway">
+          Tone escalates at fixed cut-points — 5, 13, and 25 days —
+          not a subjective judgment call made per invoice.
+        </p>
       </div>
 
-      <span class="card-status">
-        AI prioritized
-      </span>
+      <div class="methodology-card">
+        <div class="chart-title">
+          <span>Client risk cutoffs</span>
+          <small>Avg. days late → risk band</small>
+        </div>
+        <canvas id="chart-risk-thresholds" height="190"></canvas>
+        <p class="methodology-takeaway">
+          A client averaging just 3 days late already tips into
+          "Medium" — the bands are intentionally tight.
+        </p>
+      </div>
 
+      <div class="methodology-card">
+        <div class="chart-title">
+          <span>Priority score weighting</span>
+          <small>Max points contributed, of 10</small>
+        </div>
+        <canvas id="chart-priority-weights" height="190"></canvas>
+        <p class="methodology-takeaway">
+          Urgency carries the most weight (4 of 10) — a large invoice
+          can't out-rank a severely overdue one just by size.
+        </p>
+      </div>
     </div>
+  </section>
 
-    <p class="caption">
-      Ranked by money at stake, how overdue it is, and
-      when known, the client's track record.
-    </p>
+</div>
 
 
-    <div class="action-plan-header">
-      <span>Priority</span>
-      <span>Invoice</span>
-      <span>Recommended action</span>
+<!-- =========================================================
+     CUSTOMER RISK
+========================================================= -->
+
+<div id="page-customer-risk" class="app-page" data-page="customer-risk">
+
+  <section class="page-header">
+    <div>
+      <h1>Customer Risk</h1>
+      <p>See whether too much of your outstanding receivables depend on a single customer.</p>
     </div>
+    <span class="card-status">Portfolio risk</span>
+  </section>
 
-
-    <div id="action-plan-list"></div>
-
+  <div class="stats-strip risk-summary-strip">
+    <div class="stat">
+      <div class="label">Customers reviewed</div>
+      <div class="value" id="risk-stat-total">—</div>
+      <div class="stat-note">With outstanding AR</div>
+    </div>
+    <div class="stat stat-warning">
+      <div class="label">Elevated exposure</div>
+      <div class="value" id="risk-stat-elevated">—</div>
+      <div class="stat-note">Medium or high concentration</div>
+    </div>
+    <div class="stat stat-danger">
+      <div class="label">Largest share</div>
+      <div class="value" id="risk-stat-largest">—</div>
+      <div class="stat-note" id="risk-stat-largest-name">Of total outstanding</div>
+    </div>
   </div>
 
+  <div class="ledger-card concentration-card">
+    <div class="card-heading">
+      <div>
+        <h2>Customer concentration risk</h2>
+      </div>
+      <span class="card-status">Portfolio risk</span>
+    </div>
+    <p class="caption">
+      See whether too much of your outstanding receivables
+      depend on a single customer.
+    </p>
+    <div id="concentration-list" class="concentration-list">
+      <div class="empty-state">Loading concentration data...</div>
+    </div>
+  </div>
+
+</div>
 
 
-  <!-- =======================================================
-       CASH FLOW FORECAST
-  ======================================================== -->
+<!-- =========================================================
+     ASK THE AGENT
+========================================================= -->
+
+<div id="page-ask-the-agent" class="app-page" data-page="ask-the-agent">
+
+  <section class="page-header">
+    <div>
+      <h1>Ask the Agent</h1>
+      <p>Ask a question about this ledger. Answers come from the live Invoice Chaser agent.</p>
+    </div>
+    <div class="agent-live-badge">
+      <span></span>
+      Agent ready
+    </div>
+  </section>
+
+  <div class="agent-card">
+    <div class="agent-card-header">
+      <div class="agent-identity">
+        <div class="agent-avatar">✦</div>
+        <div>
+          <span class="agent-label">INVOICE CHASER AGENT</span>
+          <h2>Here's what I found</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="agent-insight">
+      <div class="insight-icon">✦</div>
+      <div>
+        <strong id="agent-summary">Your invoices are being analyzed.</strong>
+        <p>
+          The agent prioritizes overdue invoices based on
+          amount, days overdue, urgency and client history.
+        </p>
+      </div>
+    </div>
+
+    <div class="agent-capabilities">
+      <div><span>01</span> Identify priority invoices</div>
+      <div><span>02</span> Draft personalized follow-ups</div>
+      <div><span>03</span> Recommend payment plans</div>
+    </div>
+
+    <div class="suggested-questions" id="suggested-questions">
+      <button type="button" class="chip" data-question="How much am I owed right now?">How much am I owed right now?</button>
+      <button type="button" class="chip" data-question="Which invoices need attention first?">Which invoices need attention first?</button>
+      <button type="button" class="chip" data-question="Which customers are the riskiest?">Which customers are the riskiest?</button>
+    </div>
+
+    <div class="agent-chat">
+      <div id="agent-chat-log" class="chat-log" aria-live="polite">
+        <div class="chat-empty">Ask a question to start the conversation.</div>
+      </div>
+      <div id="agent-chat-response" class="agent-chat-response" style="display:none;"></div>
+      <label for="agent-question" class="agent-chat-label">Ask the agent anything</label>
+      <div class="agent-chat-row">
+        <input
+          type="text"
+          id="agent-question"
+          placeholder='e.g. "how much am I owed right now?" or "draft a follow-up for invoice X"'>
+        <button type="button" class="btn-secondary" id="agent-ask-btn">Ask</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- =========================================================
+     FORECAST
+========================================================= -->
+
+<div id="page-forecast" class="app-page" data-page="forecast">
+
+  <section class="page-header">
+    <div>
+      <h1>Cash Flow Forecast</h1>
+      <p>Best case: everyone pays on their due date. Worst case: each client pays based on their own track record.</p>
+    </div>
+    <span class="card-status">Projection</span>
+  </section>
 
   <div class="ledger-card forecast-card">
-
     <div class="card-heading">
-
       <div>
-
-        <span class="section-number">
-          04
-        </span>
-
-        <h2>
-          Cash flow forecast
-        </h2>
-
+        <h2>Cash flow forecast</h2>
       </div>
-
-      <span class="card-status">
-        Projection
-      </span>
-
+      <span class="card-status">Projection</span>
     </div>
-
     <p class="caption">
       Best case: everyone pays on their due date.
       Worst case: each client pays based on their own track record.
     </p>
 
-
     <div class="forecast-legend">
-
-      <span>
-        <i class="legend-dot best"></i>
-        Best case
-      </span>
-
-      <span>
-        <i class="legend-dot worst"></i>
-        Worst case
-      </span>
-
+      <span><i class="legend-dot best"></i> Best case</span>
+      <span><i class="legend-dot worst"></i> Worst case</span>
     </div>
 
-
-    <canvas
-      id="forecast-chart"
-      height="200">
-    </canvas>
-
+    <canvas id="forecast-chart" height="200"></canvas>
 
     <div class="forecast-controls">
-
       <div class="slider-row">
-
-        <label for="horizon-slider">
-          Horizon
-        </label>
-
-        <input
-          type="range"
-          id="horizon-slider"
-          min="7"
-          max="120"
-          value="60">
-
-        <span id="horizon-value">
-          60 days
-        </span>
-
+        <label for="horizon-slider">Horizon</label>
+        <input type="range" id="horizon-slider" min="7" max="120" value="60">
+        <span id="horizon-value">60 days</span>
       </div>
-
-
       <div class="field-row">
-
         <div class="field">
-
-          <label for="target-date">
-            Check cash available by
-          </label>
-
-          <input
-            type="date"
-            id="target-date">
-
+          <label for="target-date">Check cash available by</label>
+          <input type="date" id="target-date">
         </div>
-
-
         <div class="field">
-
-          <label for="target-amount">
-            Amount you need (₹)
-          </label>
-
-          <input
-            type="number"
-            id="target-amount"
-            value="0">
-
+          <label for="target-amount">Amount you need (₹)</label>
+          <input type="number" id="target-amount" value="0">
         </div>
-
       </div>
-
     </div>
 
-
-    <div
-      id="forecast-result"
-      class="forecast-result"
-      style="margin-top:10px;">
-    </div>
-
+    <div id="forecast-result" class="forecast-result" style="margin-top:10px;"></div>
   </div>
 
+</div>
 
 
-  <!-- =======================================================
-       AI REMINDER
-  ======================================================== -->
+<!-- =========================================================
+     REMINDERS / PAYMENT PLANS
+========================================================= -->
+
+<div id="page-reminders" class="app-page" data-page="reminders">
+
+  <section class="page-header">
+    <div>
+      <h1>Reminders</h1>
+      <p>Select an overdue invoice and let the agent decide how the follow-up should sound.</p>
+    </div>
+    <span class="card-status ai-status">AI generated</span>
+  </section>
 
   <div class="ledger-card reminder-card">
-
     <div class="card-heading">
-
       <div>
-
-        <span class="section-number">
-          05
-        </span>
-
-        <h2>
-          Draft a reminder
-        </h2>
-
+        <h2>Draft a reminder</h2>
       </div>
-
-      <span class="card-status ai-status">
-        AI generated
-      </span>
-
+      <span class="card-status ai-status">AI generated</span>
     </div>
-
     <p class="caption">
       Select an overdue invoice and let the agent decide
       how the follow-up should sound.
     </p>
 
-
     <div class="field-row">
-
       <div class="field">
-
-        <label for="invoice-select">
-          Pick an overdue invoice
-        </label>
-
+        <label for="invoice-select">Pick an overdue invoice</label>
         <select id="invoice-select"></select>
-
       </div>
-
-
-      <div class="field">
-
-        <label for="language-select">
-          Reminder language
-        </label>
-
-        <select id="language-select">
-          <option value="en">English</option>
-        </select>
-
-      </div>
-
     </div>
 
+    <div id="risk-badge-container" style="margin:18px 0;"></div>
 
-    <div
-      id="risk-badge-container"
-      style="margin:18px 0;">
-    </div>
-
-
-    <!-- Decision Explainer -->
-
-    <div
-      id="decision-explainer"
-      class="decision-explainer"
-      style="display:none;">
-
+    <div id="decision-explainer" class="decision-explainer" style="display:none;">
       <div class="explainer-heading">
-
-        <div class="explainer-icon">
-          ◆
-        </div>
-
+        <div class="explainer-icon">◆</div>
         <div>
-
-          <span class="section-kicker">
-            DECISION EXPLAINER
-          </span>
-
-          <h3>
-            Why the agent chose this
-          </h3>
-
+          <span class="section-kicker">DECISION EXPLAINER</span>
+          <h3>Why the agent chose this</h3>
         </div>
-
       </div>
-
-
       <div class="explainer-item">
-
-        <span class="explainer-label">
-          Tone
-        </span>
-
+        <span class="explainer-label">Tone</span>
         <p id="explain-tier"></p>
-
       </div>
-
-
-      <div
-        class="explainer-item"
-        id="explain-risk-row"
-        style="display:none;">
-
-        <span class="explainer-label">
-          Client risk
-        </span>
-
+      <div class="explainer-item" id="explain-risk-row" style="display:none;">
+        <span class="explainer-label">Client risk</span>
         <p id="explain-risk"></p>
-
       </div>
-
-
-      <div
-        class="explainer-item"
-        id="explain-priority-row"
-        style="display:none;">
-
-        <span class="explainer-label">
-          Priority rank
-        </span>
-
+      <div class="explainer-item" id="explain-priority-row" style="display:none;">
+        <span class="explainer-label">Priority rank</span>
         <p id="explain-priority"></p>
-
       </div>
-
     </div>
-
 
     <div class="ai-output-header">
-
       <div>
-
-        <span class="section-kicker">
-          AGENT RESPONSE
-        </span>
-
-        <h3>
-          Personalized follow-up
-        </h3>
-
+        <span class="section-kicker">AGENT RESPONSE</span>
+        <h3>Personalized follow-up</h3>
       </div>
-
-      <span class="generated-label">
-        AI
-      </span>
-
+      <span class="generated-label">AI</span>
     </div>
 
-
-    <div
-      class="slip-output"
-      id="reminder-output">
-
+    <div class="slip-output" id="reminder-output">
       Select an invoice above to draft a reminder.
-
     </div>
-
 
     <div class="reminder-actions">
-
-      <button
-        class="btn-secondary"
-        type="button"
-        onclick="copyReminder()">
-
+      <button class="btn-secondary" type="button" onclick="copyReminder()">
         Copy message
-
       </button>
-
     </div>
-
-
-
-    <!-- Payment plan -->
-
-    <div
-      id="payment-plan-section"
-      class="payment-plan-section"
-      style="display:none;">
-
-      <div class="payment-plan-heading">
-
-        <div class="plan-icon">
-          ₹
-        </div>
-
-        <div>
-
-          <h2>
-            Consider a payment plan instead
-          </h2>
-
-          <p class="caption">
-            This invoice is significantly overdue.
-            A flexible plan may be more effective than
-            a blunt demand.
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <div class="slider-row">
-
-        <label for="installments-slider">
-          Installments
-        </label>
-
-        <input
-          type="range"
-          id="installments-slider"
-          min="2"
-          max="4"
-          value="3">
-
-        <span id="installments-value">
-          3
-        </span>
-
-      </div>
-
-
-      <div
-        class="slip-output"
-        id="payment-plan-output"
-        style="margin-top:12px;">
-      </div>
-
-    </div>
-
   </div>
 
-</section>
-
-
-
-<!-- =========================================================
-     METHODOLOGY / DATA-DRIVEN DESIGN
-========================================================= -->
-
-<section
-  class="how-section methodology-section"
-  id="methodology">
-
-  <div class="section-heading">
-
-    <div>
-
-      <span class="section-kicker">
-        METHODOLOGY
-      </span>
-
-      <h2>
-        Data-driven design,
-        <span>not vibes.</span>
-      </h2>
-
+  <div id="payment-plan-section" class="ledger-card payment-plan-section">
+    <div class="payment-plan-heading">
+      <div class="plan-icon">₹</div>
+      <div>
+        <h2>Payment plans</h2>
+        <p class="caption">
+          For significantly overdue invoices, a flexible plan may be
+          more effective than a blunt demand.
+        </p>
+      </div>
     </div>
 
-    <p>
-      Every threshold below is a constant in the code — not a
-      subjective call made per invoice. This is what actually
-      decides tone, risk, and priority.
-    </p>
+    <div class="slider-row">
+      <label for="installments-slider">Installments</label>
+      <input type="range" id="installments-slider" min="2" max="4" value="3">
+      <span id="installments-value">3</span>
+    </div>
 
+    <div class="slip-output" id="payment-plan-output" style="margin-top:12px;">
+      Select a firm or urgent invoice to generate a payment-plan offer.
+    </div>
   </div>
 
+</div>
 
-  <div class="methodology-grid">
 
-    <div class="methodology-card">
-
-      <div class="chart-title">
-
-        <span>
-          Urgency thresholds
-        </span>
-
-        <small>
-          Days overdue → tone
-        </small>
-
-      </div>
-
-      <canvas
-        id="chart-tier-thresholds"
-        height="190">
-      </canvas>
-
-      <p class="methodology-takeaway">
-        Tone escalates at fixed cut-points — 5, 13, and 25 days —
-        not a subjective judgment call made per invoice.
-      </p>
-
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <span class="mark">IC</span>
+      <strong>Invoice Chaser</strong>
     </div>
+    <p>© 2026 Invoice Chaser. All rights reserved.</p>
+  </footer>
 
-
-    <div class="methodology-card">
-
-      <div class="chart-title">
-
-        <span>
-          Client risk cutoffs
-        </span>
-
-        <small>
-          Avg. days late → risk band
-        </small>
-
-      </div>
-
-      <canvas
-        id="chart-risk-thresholds"
-        height="190">
-      </canvas>
-
-      <p class="methodology-takeaway">
-        A client averaging just 3 days late already tips into
-        "Medium" — the bands are intentionally tight.
-      </p>
-
-    </div>
-
-
-    <div class="methodology-card">
-
-      <div class="chart-title">
-
-        <span>
-          Priority score weighting
-        </span>
-
-        <small>
-          Max points contributed, of 10
-        </small>
-
-      </div>
-
-      <canvas
-        id="chart-priority-weights"
-        height="190">
-      </canvas>
-
-      <p class="methodology-takeaway">
-        Urgency carries the most weight (4 of 10) — a large invoice
-        can't out-rank a severely overdue one just by size.
-      </p>
-
-    </div>
-
-  </div>
-
-</section>
-
-
-
-<!-- =========================================================
-     FOOTER
-========================================================= -->
-
-<footer class="site-footer">
-
-  <div class="footer-brand">
-
-    <span class="mark">
-      IC
-    </span>
-
-    <strong>
-      Invoice Chaser
-    </strong>
-
-  </div>
-
-  <p>
-    © 2026 Invoice Chaser. All rights reserved.
-  </p>
-
-</footer>
-
-
-
-<!-- =========================================================
-     SCRIPTS
-========================================================= -->
+  </main>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <script src="/static/js/main.js"></script>
 
-
-<!-- Small UI helper -->
-
 <script>
-
 function copyReminder() {
-
-  const output =
-    document.getElementById("reminder-output");
-
+  const output = document.getElementById("reminder-output");
   if (!output) return;
 
-  const text =
-    output.textContent.trim();
-
-  if (!text ||
-      text === "Select an invoice above to draft a reminder.") {
+  const text = output.textContent.trim();
+  if (!text || text === "Select an invoice above to draft a reminder.") {
     return;
   }
 
   navigator.clipboard.writeText(text)
     .then(() => {
-
-      const button =
-        document.querySelector(".reminder-actions .btn-secondary");
-
+      const button = document.querySelector(".reminder-actions .btn-secondary");
       if (!button) return;
-
-      const original =
-        button.textContent;
-
-      button.textContent =
-        "Copied ✓";
-
+      const original = button.textContent;
+      button.textContent = "Copied ✓";
       setTimeout(() => {
-
-        button.textContent =
-          original;
-
+        button.textContent = original;
       }, 1800);
-
     })
     .catch(() => {
-
       alert("Unable to copy the message.");
-
     });
-
 }
-
 </script>
 
 </body>
