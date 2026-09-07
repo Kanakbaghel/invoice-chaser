@@ -766,18 +766,16 @@ function applyFilters() {
   const maxEl = document.getElementById("amount-max");
   if (!searchEl || !minEl) return;
 
-  const search = searchEl.value.toLowerCase();
-  const min = parseFloat(minEl.value) || 0;
-
-  const maxRaw = maxEl ? maxEl.value : "";
-  const max = maxRaw ? parseFloat(maxRaw) : Infinity;
-
-  const filtered = bundle.overdue.filter((row) =>
-    row.customer.toLowerCase().includes(search) &&
-    activeTiers.has(row.tier) &&
-    row.amount >= min &&
-    row.amount <= max
-  );
+  // Each filter is optional and independently composable.
+  // Urgency is applied only when at least one tier chip is selected;
+  // an empty activeTiers set must NOT zero out search/amount results.
+  const { parseOptionalAmount, filterOverdueInvoices } = window.InvoiceFilters;
+  const filtered = filterOverdueInvoices(bundle.overdue, {
+    search: searchEl.value,
+    minAmount: parseOptionalAmount(minEl.value),
+    maxAmount: parseOptionalAmount(maxEl ? maxEl.value : ""),
+    activeTiers,
+  });
 
   renderTable(filtered);
   renderTierChart(filtered);
