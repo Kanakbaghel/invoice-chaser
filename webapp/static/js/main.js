@@ -663,7 +663,13 @@ function countAtRiskCustomers(data) {
 
 function formatAsOf(dateValue) {
   if (!dateValue) return "";
-  const date = new Date(dateValue);
+  const raw = String(dateValue).trim();
+  // Parse YYYY-MM-DD as a local calendar date so the demo as_of is not
+  // shifted by a day when the browser timezone is west of UTC.
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const date = match
+    ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : new Date(dateValue);
   if (Number.isNaN(date.getTime())) return String(dateValue);
   return date.toLocaleDateString(undefined, {
     year: "numeric",
@@ -1509,6 +1515,8 @@ async function fetchPaymentPlan() {
     body: JSON.stringify({
       ...row,
       num_installments: installments,
+      // Anchor installment dates to the demo/reference snapshot, not the browser clock.
+      as_of: bundle && bundle.as_of ? bundle.as_of : undefined,
     }),
   });
 
