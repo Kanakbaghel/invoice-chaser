@@ -141,7 +141,8 @@ def api_upload_compute():
 
         work = work.dropna(subset=["DueDate", "InvoiceAmount"])
 
-        today = pd.Timestamp(date.today())
+        as_of_str = data.get("as_of")
+        today = pd.Timestamp(as_of_str) if as_of_str else pd.Timestamp(date.today())
         work["DaysOverdue"] = (today - work["DueDate"]).dt.days
         work["IsOverdue"] = work["DaysOverdue"] > 0
 
