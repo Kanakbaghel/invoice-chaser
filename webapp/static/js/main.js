@@ -331,6 +331,7 @@ function attachListeners() {
   document.getElementById("file-drop").onclick = () => document.getElementById("file-input").click();
   document.getElementById("file-input").onchange = handleFileSelect;
   document.getElementById("compute-upload-btn").onclick = computeUpload;
+  document.getElementById("change-file-btn").onclick = changeUploadedFile;
 
   document.getElementById("search-input").oninput = applyFilters;
   document.getElementById("amount-min").oninput = applyFilters;
@@ -473,6 +474,12 @@ async function handleFileSelect(e) {
 
   const data = await res.json();
 
+  // Reset the input's value now that we've read the file — otherwise
+  // browsers won't fire "change" again if the person picks the SAME
+  // file a second time, which made it look like there was no way to
+  // swap files at all.
+  e.target.value = "";
+
   if (data.error) {
     alert(data.error);
     return;
@@ -496,6 +503,19 @@ async function handleFileSelect(e) {
       .join("");
 
   document.getElementById("mapping-container").style.display = "block";
+
+  const asOfInput = document.getElementById("upload-as-of");
+  if (asOfInput && !asOfInput.value) {
+    asOfInput.value = new Date().toISOString().slice(0, 10);
+  }
+}
+
+function changeUploadedFile() {
+  uploadToken = null;
+  document.getElementById("mapping-container").style.display = "none";
+  document.getElementById("file-drop-label").textContent = "Click to choose a CSV or Excel file";
+  document.getElementById("file-drop").scrollIntoView({ behavior: "smooth", block: "center" });
+  document.getElementById("file-input").click();
 }
 
 async function computeUpload() {
@@ -506,6 +526,7 @@ async function computeUpload() {
     id_col: document.getElementById("map-id").value,
     due_col: document.getElementById("map-due").value,
     paid_col: document.getElementById("map-paid").value || null,
+    as_of: document.getElementById("upload-as-of").value || null,
   };
 
   setStatsLoading(true);
