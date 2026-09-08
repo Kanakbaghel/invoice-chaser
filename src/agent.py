@@ -120,6 +120,7 @@ def offer_payment_plan(invoice_number: str, num_installments: int = 3) -> str:
         amount=row["InvoiceAmount"],
         days_overdue=int(row["DaysOverdue"]),
         num_installments=num_installments,
+        as_of=SNAPSHOT_DATE,
     )
 
 

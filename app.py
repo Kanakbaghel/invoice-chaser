@@ -338,5 +338,6 @@ if tier in ("firm", "urgent"):
         amount=row[amount_col],
         days_overdue=int(row[days_col]),
         num_installments=num_installments,
+        as_of=as_of_ts.date() if hasattr(as_of_ts, "date") else as_of_ts,
     )
     st.text_area("Payment plan offer", plan_message, height=260)

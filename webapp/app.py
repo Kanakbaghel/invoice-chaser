@@ -188,6 +188,7 @@ def api_payment_plan():
     message = draft_payment_plan_offer(
         customer=d["customer"], invoice_number=d["invoice_number"], amount=d["amount"],
         days_overdue=d["days_overdue"], num_installments=d.get("num_installments", 3),
+        as_of=d.get("as_of"),
     )
     return jsonify({"message": message})
 
