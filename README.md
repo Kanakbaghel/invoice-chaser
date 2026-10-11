@@ -12,7 +12,7 @@ Built for the AWS "Agents for Humans" Hackathon · Professional Agents track
 [![Flask](https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-14b8a6?style=flat-square)](LICENSE)
 
-**[Live Demo](https://invoice-chaser-1.onrender.com)** &nbsp;·&nbsp; **[Devpost Submission](#)** &nbsp;·&nbsp; **[Report a Bug](../../issues)**
+**[Live Demo](https://invoice-chaser-1.onrender.com)** &nbsp;·&nbsp; **[Watch the Demo Video](https://www.youtube.com/watch?v=r6ATPLGGObM)** &nbsp;·&nbsp; **[Devpost Submission](https://devpost.com/software/invoice-chaser-kaxvg9)** &nbsp;·&nbsp; **[Report a Bug](../../issues)**
 
 </div>
 
@@ -20,15 +20,36 @@ Built for the AWS "Agents for Humans" Hackathon · Professional Agents track
 
 ## Table of Contents
 
+- [Demo](#demo)
 - [The Problem](#the-problem)
 - [What It Does](#what-it-does)
 - [Data-Driven Design](#data-driven-design)
+- [What Makes It Different](#what-makes-it-different)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Running It](#running-it)
 - [Data Note](#data-note)
+- [What's Next](#whats-next)
 - [Team](#team)
+
+<br>
+
+## Demo
+
+<div align="center">
+
+[![Invoice Chaser demo video](https://img.youtube.com/vi/r6ATPLGGObM/maxresdefault.jpg)](https://www.youtube.com/watch?v=r6ATPLGGObM)
+
+**[▶ Watch the full walkthrough on YouTube](https://www.youtube.com/watch?v=r6ATPLGGObM)**
+
+</div>
+
+| | |
+|---|---|
+| **Try it live** | [invoice-chaser-1.onrender.com](https://invoice-chaser-1.onrender.com) — runs on the free tier, so the first load can take ~30 seconds to wake up |
+| **Hackathon entry** | [Devpost submission](https://devpost.com/software/invoice-chaser-kaxvg9) |
+| **Quick tour** | Load the sample ledger → check the risk and concentration views → draft a reminder → ask the agent a question → try uploading your own CSV |
 
 <br>
 
@@ -84,7 +105,19 @@ Every threshold in this project — reminder tiers, risk levels, concentration f
 
 For example: disputed invoices in the dataset settle roughly **4x later** on average than undisputed ones, which is part of why disputes are treated as a genuine risk signal rather than ignored.
 
-See the [analysis notebook](#) for the full breakdown.
+See the [analysis notebook](script/invoice_chaser_analysis.ipynb) for the full breakdown.
+
+<br>
+
+## What Makes It Different
+
+Most invoicing tools stop at sending a reminder on a timer. Invoice Chaser goes further:
+
+- **It explains its decisions.** The Decision Explainer shows *why* an invoice got a given tier — days overdue, client history, risk level — so the output is never a black box.
+- **A real conversational agent.** Ask free-form questions like *"who should I chase first?"* and a Strands + Bedrock agent answers using the same logic as the dashboard.
+- **Thresholds backed by data.** Tier cutoffs and risk levels come from analysis of a real AR dataset, not guesswork.
+- **Reliable without the LLM.** The core automation is deterministic and testable; the AI sits on top rather than being a single point of failure.
+- **Works on your own data.** Upload a CSV or Excel file, map your columns, pick an "as of" date, and get the same analysis.
 
 <br>
 
@@ -190,6 +223,20 @@ Since the dataset is historical and every invoice has a settlement date, the app
 
 <br>
 
+## What's Next
+
+Invoice Chaser is a working prototype. Ideas on the roadmap:
+
+- [ ] User accounts and persistent storage for ledgers
+- [ ] Send reminders directly by email instead of copy-paste
+- [ ] Scheduled daily checks that flag newly overdue invoices
+- [ ] Rate limiting and usage guardrails on the agent endpoint
+- [ ] Integrations with accounting tools (QuickBooks, Xero, Zoho)
+
+Feedback and ideas are welcome — [open an issue](../../issues).
+
+<br>
+
 ## Team
 
 <div align="center">
@@ -211,7 +258,9 @@ Since the dataset is historical and every invoice has a settlement date, the app
 
 <br>
 
-*Built in a few intense weeks for the AWS "Agents for Humans" Hackathon — thanks for reading this far.*
+*Built by a four-person, three-country team for the AWS "Agents for Humans" Hackathon.*
+
+**[Live Demo](https://invoice-chaser-1.onrender.com)** · **[Video](https://www.youtube.com/watch?v=r6ATPLGGObM)** · **[Devpost](https://devpost.com/software/invoice-chaser-kaxvg9)** · If this helped, a ⭐ means a lot.
 
 ![footer](https://capsule-render.vercel.app/api?type=waving&color=0:14b8a6,50:6366f1,100:1e293b&height=120&section=footer)
 
