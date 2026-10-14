@@ -1842,9 +1842,36 @@ canvas {
   background: linear-gradient(90deg, var(--primary), var(--blue), transparent);
 }
 
+.saved-ledger-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 14px 0 0;
+  padding: 12px 16px;
+  border: 1px dashed var(--accent, #d4a24e);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.saved-ledger-bar span {
+  display: block;
+  opacity: 0.7;
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.saved-ledger-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .reminder-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
   margin-top: 12px;
 }
 
