@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     preserveScroll: true,
   });
   renderMethodologyCharts();
+  initSavedLedgerBar();
   loadSample();
 });
 
@@ -510,6 +511,64 @@ async function handleFileSelect(e) {
   }
 }
 
+
+// ---------------- Save / restore the uploaded ledger (browser only) ----------------
+// Stored in localStorage on the user's own device — never sent to our server.
+// Wrapped in try/catch: storage can be blocked, full, or unavailable.
+const SAVED_LEDGER_KEY = "invoiceChaser.savedLedger.v1";
+
+function saveLedgerLocally(data) {
+  try {
+    localStorage.setItem(
+      SAVED_LEDGER_KEY,
+      JSON.stringify({ saved_at: new Date().toISOString(), bundle: data })
+    );
+  } catch (err) {
+    // Too large or blocked — the app still works, it just won't be remembered.
+    console.warn("Couldn't save ledger locally:", err);
+  }
+}
+
+function readSavedLedger() {
+  try {
+    const raw = localStorage.getItem(SAVED_LEDGER_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    return saved && saved.bundle && saved.bundle.summary ? saved : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function clearSavedLedger() {
+  try { localStorage.removeItem(SAVED_LEDGER_KEY); } catch (err) { /* ignore */ }
+  const bar = document.getElementById("saved-ledger-bar");
+  if (bar) bar.style.display = "none";
+}
+
+function initSavedLedgerBar() {
+  const bar = document.getElementById("saved-ledger-bar");
+  if (!bar) return;
+
+  const saved = readSavedLedger();
+  if (!saved) { bar.style.display = "none"; return; }
+
+  const when = new Date(saved.saved_at).toLocaleString();
+  const count = saved.bundle.summary.open_invoices ?? "";
+  document.getElementById("saved-ledger-meta").textContent =
+    `Saved ${when}${count !== "" ? ` · ${count} open invoices` : ""}`;
+  bar.style.display = "flex";
+
+  document.getElementById("restore-ledger-btn").onclick = () => {
+    const fresh = readSavedLedger();
+    if (!fresh) return;
+    setBundle(fresh.bundle);
+    showBanner("loading", "Restored your saved ledger from this browser.");
+    setTimeout(clearBanner, 2500);
+  };
+  document.getElementById("clear-ledger-btn").onclick = clearSavedLedger;
+}
+
 function changeUploadedFile() {
   uploadToken = null;
   document.getElementById("mapping-container").style.display = "none";
@@ -551,6 +610,8 @@ async function computeUpload() {
 
     clearBanner();
     setBundle(data);
+    saveLedgerLocally(data);
+    initSavedLedgerBar();
   } catch (err) {
     setStatsLoading(false);
 
@@ -1200,6 +1261,40 @@ async function refreshReminder() {
 
   document.getElementById("reminder-output").textContent =
     data.message;
+}
+
+
+// ---------------- Send reminder via the user's own email app ----------------
+// Opens a pre-filled draft with mailto: — nothing is sent from our server, so
+// no email service or credentials are needed. The user reviews and hits send.
+function sendReminderEmail() {
+  const output = document.getElementById("reminder-output");
+  const select = document.getElementById("invoice-select");
+  if (!output || !bundle) return;
+
+  let body = output.textContent.trim();
+  if (!body || body.startsWith("Select an invoice")) {
+    alert("Pick an invoice first so there's a reminder to send.");
+    return;
+  }
+
+  const row = bundle.overdue.find((r) => r.invoice_number === (select && select.value));
+  let subject = row
+    ? `Payment reminder: Invoice ${row.invoice_number}`
+    : "Payment reminder";
+
+  // The drafted reminder usually starts with a "Subject: ..." line — use it
+  // as the real email subject instead of repeating it inside the body.
+  const m = body.match(/^Subject:\s*(.+)\n+/i);
+  if (m) {
+    subject = m[1].trim();
+    body = body.slice(m[0].length).trim();
+  }
+
+  // Some mail clients truncate very long mailto links, so keep the body bounded.
+  const safeBody = body.length > 1800 ? body.slice(0, 1800) + "…" : body;
+  window.location.href =
+    `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`;
 }
 
 async function onInvoiceSelect() {
