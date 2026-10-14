@@ -227,10 +227,12 @@ Since the dataset is historical and every invoice has a settlement date, the app
 
 Invoice Chaser is a working prototype. Ideas on the roadmap:
 
-- [ ] User accounts and persistent storage for ledgers
-- [ ] Send reminders directly by email instead of copy-paste
+- [ ] User accounts and server-side persistent storage for ledgers
+- [ ] Send reminders automatically from the server (needs an email service)
 - [ ] Scheduled daily checks that flag newly overdue invoices
-- [ ] Rate limiting and usage guardrails on the agent endpoint
+- [x] Rate limiting and usage guardrails on the agent endpoint
+- [x] One-click "Send via email" (opens a pre-filled draft in your mail app)
+- [x] Your last uploaded ledger is remembered in your browser (never stored on the server)
 - [ ] Integrations with accounting tools (QuickBooks, Xero, Zoho)
 
 Feedback and ideas are welcome — [open an issue](../../issues).
