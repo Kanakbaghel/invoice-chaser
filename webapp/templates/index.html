@@ -184,7 +184,7 @@
       </div>
       <span class="card-status">Data source</span>
     </div>
-    <p class="caption">Try the sample dataset, or upload your own invoices — nothing you upload is stored.</p>
+    <p class="caption">Try the sample dataset, or upload your own invoices. Your file is never kept on our server — the analyzed results can be saved in this browser only, so you can pick up where you left off.</p>
 
     <div class="source-toggle">
       <button class="toggle-btn active" id="btn-sample" type="button">Sample dataset</button>
@@ -200,6 +200,17 @@
           </label>
           <input type="date" id="snapshot-date" value="2013-03-01">
         </div>
+      </div>
+    </div>
+
+    <div id="saved-ledger-bar" class="saved-ledger-bar" style="display:none;">
+      <div>
+        <strong>Saved ledger found</strong>
+        <span id="saved-ledger-meta"></span>
+      </div>
+      <div class="saved-ledger-actions">
+        <button class="btn-secondary" id="restore-ledger-btn" type="button">Restore</button>
+        <button class="btn-secondary" id="clear-ledger-btn" type="button">Clear saved data</button>
       </div>
     </div>
 
@@ -745,6 +756,9 @@
     <div class="reminder-actions">
       <button class="btn-secondary" type="button" onclick="copyReminder()">
         Copy message
+      </button>
+      <button class="btn-secondary" type="button" id="send-email-btn" onclick="sendReminderEmail()">
+        ✉ Send via email
       </button>
     </div>
   </div>
