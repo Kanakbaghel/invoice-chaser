@@ -13,7 +13,10 @@ Deploy free on Render.com (or Railway) pointing at this file.
 import sys
 import os
 import uuid
+import time
+import threading
 import tempfile
+from collections import defaultdict, deque
 from datetime import date
 
 import pandas as pd
@@ -44,6 +47,55 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 # In-memory store for uploaded files between the "columns" and "compute"
 # steps. Fine for a demo; a production app would use real session storage.
 UPLOAD_CACHE = {}
+
+
+# ---------------- Rate limiting for /api/chat ----------------
+# Every chat call costs real money on Amazon Bedrock, so the agent endpoint is
+# protected with simple in-memory limits (no extra dependency). Limits are
+# per worker process: with 2 gunicorn workers the effective ceiling is ~2x.
+# Override with environment variables on Render if you need to loosen/tighten.
+CHAT_MAX_PER_MINUTE = int(os.environ.get("CHAT_MAX_PER_MINUTE", 6))
+CHAT_MAX_PER_DAY = int(os.environ.get("CHAT_MAX_PER_DAY", 40))
+CHAT_GLOBAL_MAX_PER_DAY = int(os.environ.get("CHAT_GLOBAL_MAX_PER_DAY", 400))
+CHAT_MAX_QUESTION_CHARS = 500
+
+_chat_hits = defaultdict(deque)   # ip -> timestamps of recent requests
+_chat_global = deque()            # timestamps of all requests (last 24h)
+_chat_lock = threading.Lock()
+
+
+def _client_ip():
+    # Render sits behind a proxy, so the real client is in X-Forwarded-For.
+    fwd = request.headers.get("X-Forwarded-For", "")
+    return (fwd.split(",")[0].strip() if fwd else request.remote_addr) or "unknown"
+
+
+def _check_chat_limit(ip):
+    """Return None if allowed, otherwise a friendly message explaining the limit."""
+    now = time.time()
+    with _chat_lock:
+        while _chat_global and now - _chat_global[0] > 86400:
+            _chat_global.popleft()
+        if len(_chat_global) >= CHAT_GLOBAL_MAX_PER_DAY:
+            return "The demo agent has hit its daily usage cap. Please try again tomorrow."
+
+        hits = _chat_hits[ip]
+        while hits and now - hits[0] > 86400:
+            hits.popleft()
+        if len(hits) >= CHAT_MAX_PER_DAY:
+            return f"Daily limit reached ({CHAT_MAX_PER_DAY} questions). Please come back tomorrow."
+        recent = sum(1 for t in hits if now - t <= 60)
+        if recent >= CHAT_MAX_PER_MINUTE:
+            return "You're asking too fast. Please wait a minute and try again."
+
+        hits.append(now)
+        _chat_global.append(now)
+
+        # keep the dict from growing forever
+        if len(_chat_hits) > 5000:
+            for k in [k for k, v in _chat_hits.items() if not v or now - v[-1] > 86400]:
+                _chat_hits.pop(k, None)
+    return None
 
 
 def _serve_index():
@@ -129,7 +181,7 @@ def api_upload_compute():
         work = pd.DataFrame({
             "customerID": raw_df[data["customer_col"]],
             "invoiceNumber": raw_df[data["id_col"]].astype(str),
-            "InvoiceAmount": pd.to_numeric(raw_df[data["amount_col"]], errors="coerce"),
+            "InvoiceAmount": pd.to_numeric(raw_df[data["amount_col"]], errors="coerce").astype(float),
             "DueDate": pd.to_datetime(raw_df[data["due_col"]], errors="coerce"),
         })
 
@@ -202,6 +254,12 @@ def api_chat():
     question = (data.get("question") or "").strip()
     if not question:
         return jsonify({"error": "Missing 'question' in JSON body."}), 400
+    if len(question) > CHAT_MAX_QUESTION_CHARS:
+        return jsonify({"error": f"Please keep questions under {CHAT_MAX_QUESTION_CHARS} characters."}), 400
+
+    limit_msg = _check_chat_limit(_client_ip())
+    if limit_msg:
+        return jsonify({"error": limit_msg}), 429
 
     try:
         # Import here so the rest of the webapp still starts without AWS / strands.
